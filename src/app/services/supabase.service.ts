@@ -30,9 +30,9 @@ export interface SessionCheckResult {
 })
 export class SupabaseService {
   // Backend API URL
-  // For local development: http://localhost:3000
-  // For production: Your deployed backend URL
-  private readonly API_URL = 'http://localhost:3000/api';
+  // For local development: http://localhost:3000/api
+  // For production: https://mb-port-production.up.railway.app/api
+  private readonly API_URL = 'https://mb-port-production.up.railway.app/api';
   
   private isBrowser: boolean;
 
