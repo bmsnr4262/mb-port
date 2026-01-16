@@ -221,7 +221,7 @@ export class App {
       description: 'A modern, responsive portfolio website built with Angular featuring smooth animations and dark theme design.',
       type: 'Personal Project',
       technologies: ['Angular', 'TypeScript', 'CSS3', 'Responsive Design'],
-      githubUrl: 'https://github.com',
+      githubUrl: 'https://github.com/bmsnr4262',
       gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
       emoji: '🎨'
     },
