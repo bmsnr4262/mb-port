@@ -1,0 +1,214 @@
+<div class="otp-container">
+  <div class="otp-background">
+    <div class="grid-pattern"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+  </div>
+
+  <div class="otp-card">
+    <div class="card-header">
+      <div class="lock-icon">
+        @if (otpVerified() || hasActiveSession()) {
+          <span class="icon-unlock">🔓</span>
+        } @else {
+          <span class="icon-lock">🔐</span>
+        }
+      </div>
+      <h1 class="card-title">Authentication Required</h1>
+      <p class="card-subtitle">
+        Access to <span class="project-name">{{ projectName }}</span> requires verification
+      </p>
+    </div>
+
+    <div class="card-body">
+      
+      <!-- STAGE 1: Enter Email to Check Session -->
+      @if (!otpRequired() && !hasActiveSession() && !otpVerified()) {
+        <div class="stage-content">
+          <div class="info-box">
+            <span class="info-icon">ℹ️</span>
+            <p>Enter your email to check if you have an active session.</p>
+          </div>
+
+          <div class="visitor-form">
+            <div class="form-group">
+              <label class="input-label">Your Email</label>
+              <input 
+                type="email" 
+                class="text-input"
+                [(ngModel)]="visitorEmail"
+                placeholder="Enter your email"
+                (keyup.enter)="checkAccess()"
+                required>
+            </div>
+          </div>
+
+          @if (error()) {
+            <div class="error-box">
+              <span class="error-icon">❌</span>
+              <p>{{ error() }}</p>
+            </div>
+          }
+
+          <button 
+            class="btn-primary" 
+            (click)="checkAccess()" 
+            [disabled]="checkingSession() || !visitorEmail.trim()">
+            @if (checkingSession()) {
+              <span class="spinner"></span>
+              Checking...
+            } @else {
+              <span class="btn-icon">🔍</span>
+              Check Access
+            }
+          </button>
+
+          <p class="privacy-note">🔒 We'll check if you have an existing session.</p>
+        </div>
+      }
+
+      <!-- STAGE 2A: Active Session Found - Direct Access -->
+      @if (hasActiveSession() && !otpVerified()) {
+        <div class="stage-content verified">
+          <div class="success-animation">
+            <div class="checkmark">✓</div>
+          </div>
+          <h2 class="verified-title">Welcome Back!</h2>
+          
+          @if (success()) {
+            <div class="success-box">
+              <span class="success-icon">✅</span>
+              <p>{{ success() }}</p>
+            </div>
+          }
+          
+          <p class="verified-text">Active session found. Opening {{ projectName }}...</p>
+          <div class="redirect-loader"></div>
+        </div>
+      }
+
+      <!-- STAGE 2B: No Session - Request OTP -->
+      @if (otpRequired() && !otpSent() && !otpVerified()) {
+        <div class="stage-content">
+          @if (success()) {
+            <div class="info-box">
+              <span class="info-icon">📧</span>
+              <p>{{ success() }}</p>
+            </div>
+          }
+
+          <div class="email-badge">
+            <span class="badge-label">Email:</span>
+            <span class="badge-value">{{ visitorEmail }}</span>
+            <button class="change-btn" (click)="resetFlow()">Change</button>
+          </div>
+
+          <div class="visitor-form">
+            <div class="form-group">
+              <label class="input-label">Your Name</label>
+              <input 
+                type="text" 
+                class="text-input"
+                [(ngModel)]="visitorName"
+                placeholder="Enter your name"
+                required>
+            </div>
+          </div>
+
+          @if (error()) {
+            <div class="error-box">
+              <span class="error-icon">❌</span>
+              <p>{{ error() }}</p>
+            </div>
+          }
+
+          <button 
+            class="btn-primary" 
+            (click)="sendOtp()" 
+            [disabled]="loading() || !visitorName.trim()">
+            @if (loading()) {
+              <span class="spinner"></span>
+              Sending OTP...
+            } @else {
+              <span class="btn-icon">📧</span>
+              Request Access (Send OTP)
+            }
+          </button>
+          
+          <p class="privacy-note">🔒 OTP will be sent to the project owner for approval.</p>
+        </div>
+      }
+
+      <!-- STAGE 3: Enter OTP -->
+      @if (otpSent() && !otpVerified()) {
+        <div class="stage-content">
+          @if (success()) {
+            <div class="success-box">
+              <span class="success-icon">✅</span>
+              <p>{{ success() }}</p>
+            </div>
+          }
+
+          <div class="otp-input-container">
+            <label class="input-label">Enter 6-Digit OTP</label>
+            <input 
+              type="text" 
+              class="otp-input"
+              [(ngModel)]="enteredOtp"
+              maxlength="6"
+              placeholder="000000"
+              (keyup.enter)="verifyOtp()">
+          </div>
+
+          @if (error()) {
+            <div class="error-box">
+              <span class="error-icon">❌</span>
+              <p>{{ error() }}</p>
+            </div>
+          }
+
+          <div class="button-group">
+            <button 
+              class="btn-primary" 
+              (click)="verifyOtp()"
+              [disabled]="enteredOtp.length !== 6">
+              <span class="btn-icon">🔓</span>
+              Verify OTP
+            </button>
+            
+            <button class="btn-secondary" (click)="resendOtp()">
+              <span class="btn-icon">🔄</span>
+              Resend OTP
+            </button>
+          </div>
+
+          <p class="expiry-note">⏱️ OTP expires in 5 minutes | ✅ Session valid for 7 days after verification</p>
+        </div>
+      }
+
+      <!-- STAGE 4: Verified -->
+      @if (otpVerified()) {
+        <div class="stage-content verified">
+          <div class="success-animation">
+            <div class="checkmark">✓</div>
+          </div>
+          <h2 class="verified-title">Verification Successful!</h2>
+          <p class="verified-text">Opening {{ projectName }} in new tab...</p>
+          <p class="session-note">📌 Your session is now active for 7 days.</p>
+          <div class="redirect-loader"></div>
+        </div>
+      }
+    </div>
+
+    <div class="card-footer">
+      <a href="/" class="back-link">
+        <span>←</span> Back to Portfolio
+      </a>
+    </div>
+  </div>
+
+  <div class="security-badge" style="cursor: default;">
+    <span class="badge-icon">🛡️</span>
+    <span class="badge-text">Secured Access</span>
+  </div>
+</div>

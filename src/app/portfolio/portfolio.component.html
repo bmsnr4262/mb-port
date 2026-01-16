@@ -1,0 +1,494 @@
+<div class="bg-pattern"></div>
+
+<!-- Navigation -->
+<nav class="navbar" [class.scrolled]="isScrolled()">
+  <div class="nav-container">
+    <a href="#home" class="nav-logo">
+      <span class="logo-bracket">&lt;</span>
+      <span class="logo-text">{{ initials() }}</span>
+      <span class="logo-bracket">/&gt;</span>
+    </a>
+    
+    <button class="mobile-toggle" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen()">
+      <span class="hamburger" [class.active]="mobileMenuOpen()"></span>
+    </button>
+    
+    <ul class="nav-links" [class.active]="mobileMenuOpen()">
+      @for (link of navLinks; track link.id) {
+        <li>
+          <a [href]="'#' + link.id" (click)="closeMobileMenu()">{{ link.label }}</a>
+        </li>
+      }
+      <li>
+        <a href="#contact" class="nav-cta" (click)="closeMobileMenu()">Let's Talk</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section id="home" class="hero">
+  <div class="hero-container">
+    <div class="hero-content">
+      <p class="hero-greeting animate-in">
+        <span class="wave">👋</span> Hello, I'm
+      </p>
+      <h1 class="hero-name animate-in delay-100">
+        {{ profile().name }}
+      </h1>
+      <h2 class="hero-title animate-in delay-200">
+        <span class="title-dynamic gradient-text">{{ profile().title }}</span>
+      </h2>
+      <p class="hero-stack animate-in delay-200">
+        Angular | React | .NET Core | Azure
+      </p>
+      <p class="hero-description animate-in delay-300">
+        {{ profile().tagline }}
+      </p>
+      
+      <div class="hero-actions animate-in delay-400">
+        <a href="#projects" class="btn btn-primary">
+          <span>View My Work</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 17L17 7M17 7H7M17 7V17"/>
+          </svg>
+        </a>
+        <a href="#contact" class="btn btn-secondary">
+          <span>Contact Me</span>
+        </a>
+      </div>
+      
+      <div class="hero-social animate-in delay-500">
+        @for (social of socials; track social.name) {
+          <a [href]="social.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="social.name" class="social-link">
+            <span [innerHTML]="social.icon"></span>
+          </a>
+        }
+      </div>
+    </div>
+    
+    <div class="hero-visual animate-in delay-300">
+      <div class="hero-image-wrapper">
+        <div class="hero-image-glow"></div>
+        <div class="hero-image-container">
+<div class="hero-avatar">
+          <img src="assets/profile-photo.jpg" alt="{{ profile().name }}" class="avatar-image">
+        </div>
+        </div>
+        <div class="hero-status">
+          <span class="status-dot"></span>
+          <span>Available for work</span>
+        </div>
+      </div>
+      
+      <div class="floating-badges">
+        <div class="badge badge-1">
+          <span class="badge-icon">🚀</span>
+          <span>{{ experience().years }}+ Years Exp</span>
+        </div>
+        <div class="badge badge-2">
+          <span class="badge-icon">💼</span>
+          <span>{{ experience().projects }}+ Projects</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="scroll-indicator">
+    <a href="#about">
+      <span class="mouse"></span>
+      <span class="scroll-text">Scroll Down</span>
+    </a>
+  </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="section about">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag font-mono">// About Me</span>
+      <h2 class="section-title">Get to Know Me</h2>
+    </div>
+    
+    <div class="about-grid">
+      <div class="about-content">
+        <p class="about-intro">
+          {{ about().intro }}
+        </p>
+        <p class="about-text">
+          {{ about().description }}
+        </p>
+        <p class="about-text">
+          {{ about().passion }}
+        </p>
+        
+        <div class="about-stats">
+          @for (stat of stats; track stat.label) {
+            <div class="stat-item">
+              <span class="stat-value gradient-text">{{ stat.value }}</span>
+              <span class="stat-label">{{ stat.label }}</span>
+            </div>
+          }
+        </div>
+        
+        <a href="assets/Madhan_Sainath_Reddy_Resume.docx" download class="btn btn-primary">
+          <span>Download Resume</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </a>
+      </div>
+      
+      <div class="about-details">
+        <div class="detail-card">
+          <h3 class="detail-title">Quick Info</h3>
+          <ul class="detail-list">
+            <li>
+              <span class="detail-icon">📍</span>
+              <span class="detail-label">Location:</span>
+              <span class="detail-value">{{ profile().location }}</span>
+            </li>
+            <li>
+              <span class="detail-icon">📧</span>
+              <span class="detail-label">Email:</span>
+              <span class="detail-value">{{ profile().email }}</span>
+            </li>
+            <li>
+              <span class="detail-icon">🎓</span>
+              <span class="detail-label">Degree:</span>
+              <span class="detail-value">{{ education()[0]?.degree || 'B.S. Computer Science' }}</span>
+            </li>
+            <li>
+              <span class="detail-icon">💼</span>
+              <span class="detail-label">Status:</span>
+              <span class="detail-value status-available">Open to opportunities</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="detail-card interests-card">
+          <h3 class="detail-title">Interests</h3>
+          <div class="interests-grid">
+            @for (interest of interests; track interest) {
+              <span class="interest-tag">{{ interest }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Skills Section -->
+<section id="skills" class="section skills">
+  <div class="container">
+    <div class="section-header centered">
+      <span class="section-tag font-mono">// Skills & Expertise</span>
+      <h2 class="section-title">Technologies I Work With</h2>
+      <p class="section-subtitle">
+        A comprehensive toolkit built over years of professional development
+      </p>
+    </div>
+    
+    <div class="skills-grid">
+      @for (category of skillCategories; track category.title) {
+        <div class="skill-category">
+          <div class="category-header">
+            <span class="category-icon" [innerHTML]="category.icon"></span>
+            <h3 class="category-title">{{ category.title }}</h3>
+          </div>
+          <div class="skill-tags">
+            @for (skill of category.skills; track skill) {
+              <span class="skill-tag">{{ skill }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Experience Section -->
+<section id="experience" class="section experience">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag font-mono">// Experience</span>
+      <h2 class="section-title">Where I've Worked</h2>
+    </div>
+    
+    <div class="timeline">
+      @for (job of experiences; track job.company; let i = $index) {
+        <div class="timeline-item" [class.active]="i === 0">
+          <div class="timeline-marker">
+            <span class="marker-dot"></span>
+            <span class="marker-line"></span>
+          </div>
+          
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div class="timeline-meta">
+                <span class="timeline-date font-mono">{{ job.period }}</span>
+                <span class="timeline-location">{{ job.location }}</span>
+              </div>
+              <h3 class="timeline-title">{{ job.role }}</h3>
+              <h4 class="timeline-company">{{ job.company }}</h4>
+            </div>
+            
+            <p class="timeline-description">{{ job.description }}</p>
+            
+            <ul class="timeline-highlights">
+              @for (highlight of job.highlights; track highlight) {
+                <li>{{ highlight }}</li>
+              }
+            </ul>
+            
+            <div class="timeline-tech">
+              @for (tech of job.technologies; track tech) {
+                <span class="tech-tag">{{ tech }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Projects Section -->
+<section id="projects" class="section projects">
+  <div class="container">
+    <div class="section-header centered">
+      <span class="section-tag font-mono">// Portfolio</span>
+      <h2 class="section-title">Featured Projects</h2>
+      <p class="section-subtitle">
+        A selection of my recent work and personal projects
+      </p>
+    </div>
+    
+    <div class="projects-grid">
+      @for (project of projects; track project.title) {
+        <article class="project-card" [class.featured]="project.featured">
+          <div class="project-image">
+            @if (project.image) {
+              <img [src]="project.image" [alt]="project.title" class="project-thumbnail">
+            } @else {
+              <div class="project-placeholder" [style.background]="project.gradient">
+                <span class="project-emoji">{{ project.emoji }}</span>
+              </div>
+            }
+            <div class="project-overlay">
+              <div class="project-links">
+                @if (project.liveUrl) {
+                  <a href="#" (click)="navigateWithAuth(project, 'live', $event)" class="project-link" aria-label="View live site (requires authentication)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    <span class="lock-badge">🔐</span>
+                  </a>
+                }
+                @if (project.githubUrl) {
+                  <a href="#" (click)="navigateWithAuth(project, 'github', $event)" class="project-link" aria-label="View source code (requires authentication)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                    </svg>
+                    <span class="lock-badge">🔐</span>
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+          
+          <div class="project-content">
+            <div class="project-meta">
+              <span class="project-type font-mono">{{ project.type }}</span>
+              @if (project.featured) {
+                <span class="project-badge">Featured</span>
+              }
+            </div>
+            <h3 class="project-title">{{ project.title }}</h3>
+            <p class="project-description">{{ project.description }}</p>
+            
+            <div class="project-tech">
+              @for (tech of project.technologies; track tech) {
+                <span>{{ tech }}</span>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Education Section -->
+<section id="education" class="section education">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag font-mono">// Education</span>
+      <h2 class="section-title">Academic Background</h2>
+    </div>
+    
+    <div class="education-grid">
+      @for (edu of education(); track edu.institution) {
+        <div class="education-card">
+          <div class="edu-icon">🎓</div>
+          <div class="edu-content">
+            <span class="edu-period font-mono">{{ edu.period }}</span>
+            <h3 class="edu-degree">{{ edu.degree }}</h3>
+            <h4 class="edu-institution">{{ edu.institution }}</h4>
+            @if (edu.gpa) {
+              <p class="edu-gpa">GPA: {{ edu.gpa }}</p>
+            }
+            @if (edu.achievements && edu.achievements.length) {
+              <ul class="edu-achievements">
+                @for (achievement of edu.achievements; track achievement) {
+                  <li>{{ achievement }}</li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      }
+      
+      <div class="certifications-card">
+        <h3 class="cert-title">Certifications & Courses</h3>
+        <div class="cert-list">
+          @for (cert of certifications; track cert.name) {
+            <div class="cert-item">
+              <span class="cert-icon">{{ cert.icon }}</span>
+              <div class="cert-info">
+                <span class="cert-name">{{ cert.name }}</span>
+                <span class="cert-issuer">{{ cert.issuer }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="section contact">
+  <div class="container">
+    <div class="contact-wrapper">
+      <div class="contact-info">
+        <span class="section-tag font-mono">// Get In Touch</span>
+        <h2 class="section-title">Let's Work Together</h2>
+        <p class="contact-text">
+          I'm currently open to new opportunities and would love to hear about your project. 
+          Whether you have a question or just want to say hi, feel free to reach out!
+        </p>
+        
+        <div class="contact-methods">
+          <a [href]="'mailto:' + profile().email" class="contact-method">
+            <span class="method-icon">📧</span>
+            <div class="method-info">
+              <span class="method-label">Email</span>
+              <span class="method-value">{{ profile().email }}</span>
+    </div>
+          </a>
+          
+          <a [href]="'tel:' + profile().phone" class="contact-method">
+            <span class="method-icon">📱</span>
+            <div class="method-info">
+              <span class="method-label">Phone</span>
+              <span class="method-value">{{ profile().phone }}</span>
+      </div>
+          </a>
+          
+          <a [href]="socials[0]?.url || '#'" target="_blank" class="contact-method">
+            <span class="method-icon">💼</span>
+            <div class="method-info">
+              <span class="method-label">LinkedIn</span>
+              <span class="method-value">Let's connect</span>
+            </div>
+          </a>
+          
+          <div class="contact-method">
+            <span class="method-icon">📍</span>
+            <div class="method-info">
+              <span class="method-label">Location</span>
+              <span class="method-value">{{ profile().location }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="contact-form-wrapper">
+        <form class="contact-form" (ngSubmit)="handleSubmit($event)">
+          <div class="form-group">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" name="name" placeholder="John Doe" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Your Email</label>
+            <input type="email" id="email" name="email" placeholder="john@example.com" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" placeholder="Project Inquiry">
+          </div>
+          
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" placeholder="Tell me about your project..." required></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-full">
+            <span>Send Message</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <a href="#home" class="footer-logo">
+          <span class="logo-bracket">&lt;</span>
+          <span class="logo-text">{{ initials() }}</span>
+          <span class="logo-bracket">/&gt;</span>
+        </a>
+        <p class="footer-tagline">Building the future, one line of code at a time.</p>
+      </div>
+      
+      <div class="footer-links">
+        <div class="footer-nav">
+          @for (link of navLinks; track link.id) {
+            <a [href]="'#' + link.id">{{ link.label }}</a>
+          }
+        </div>
+        
+        <div class="footer-social">
+          @for (social of socials; track social.name) {
+            <a [href]="social.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="social.name">
+              <span [innerHTML]="social.icon"></span>
+            </a>
+          }
+      </div>
+    </div>
+  </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; {{ currentYear }} {{ profile().name }}. All rights reserved.</p>
+      <p class="footer-credit">
+        Designed & Built with <span class="heart">❤️</span> using Angular
+      </p>
+    </div>
+  </div>
+</footer>
