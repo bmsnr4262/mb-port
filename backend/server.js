@@ -14,7 +14,8 @@ app.use(cors({
   origin: [
     'http://localhost:4200',
     'https://bmsnr4262.github.io',
-    /\.fly\.dev$/  // Allow all Fly.io domains
+    /\.railway\.app$/,  // Allow all Railway domains
+    /\.up\.railway\.app$/
   ],
   methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
@@ -27,14 +28,20 @@ app.get('/', (req, res) => {
 });
 
 // PostgreSQL Connection Pool
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'portfolio_db',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'your_password',
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
-});
+// Railway provides DATABASE_URL or individual PGHOST, PGPORT, etc.
+const pool = process.env.DATABASE_URL 
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    })
+  : new Pool({
+      host: process.env.PGHOST || process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.PGPORT || process.env.DB_PORT || '5432'),
+      database: process.env.PGDATABASE || process.env.DB_NAME || 'portfolio_db',
+      user: process.env.PGUSER || process.env.DB_USER || 'postgres',
+      password: process.env.PGPASSWORD || process.env.DB_PASSWORD || 'your_password',
+      ssl: process.env.DB_SSL === 'true' || process.env.PGHOST ? { rejectUnauthorized: false } : false
+    });
 
 // Test database connection
 pool.connect((err, client, release) => {
