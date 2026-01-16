@@ -180,58 +180,18 @@ export class App {
     }
   ];
 
-  // Projects (You can update these with your actual projects)
+  // Projects
   projects: Project[] = [
     {
-      title: 'Enterprise Web Application',
-      description: 'A scalable enterprise web application built with Angular featuring reusable UI components, optimized performance, and responsive design.',
-      type: 'Web Application',
-      technologies: ['Angular', 'TypeScript', '.NET Core', 'PostgreSQL'],
-      featured: true,
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      emoji: '🏢'
-    },
-    {
-      title: 'React Dashboard',
-      description: 'A modern React-based dashboard with intuitive UI/UX workflows, real-time data visualization, and optimized API handling.',
-      type: 'Web Application',
-      technologies: ['React', 'TypeScript', 'REST APIs', 'Azure'],
-      featured: true,
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      emoji: '📊'
-    },
-    {
-      title: 'REST API Backend',
-      description: 'Secure REST API backend built with .NET Core and C#, featuring Entity Framework integration and PostgreSQL database.',
-      type: 'Backend Service',
-      technologies: ['.NET Core', 'C#', 'Entity Framework', 'PostgreSQL'],
-      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      emoji: '⚙️'
-    },
-    {
-      title: 'Azure Cloud Deployment',
-      description: 'Cloud infrastructure setup and application deployment on Microsoft Azure with monitoring and environment configurations.',
-      type: 'DevOps',
-      technologies: ['Azure', 'Azure DevOps', 'CI/CD', 'Git'],
-      gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      emoji: '☁️'
-    },
-    {
       title: 'Portfolio Website',
-      description: 'A modern, responsive portfolio website built with Angular featuring smooth animations and dark theme design.',
+      description: 'A modern, responsive portfolio website built with Angular featuring smooth animations, dark theme design, and seamless user experience.',
       type: 'Personal Project',
       technologies: ['Angular', 'TypeScript', 'CSS3', 'Responsive Design'],
-      githubUrl: 'https://github.com/bmsnr4262',
+      githubUrl: 'https://github.com/bmsnr4262/mb-port',
+      liveUrl: 'https://bmsnr4262.github.io/mb-port/',
+      featured: true,
       gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
       emoji: '🎨'
-    },
-    {
-      title: 'UI Component Library',
-      description: 'Reusable UI component library for Angular applications with consistent styling and accessibility features.',
-      type: 'Open Source',
-      technologies: ['Angular', 'TypeScript', 'SCSS', 'Storybook'],
-      gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-      emoji: '🧩'
     }
   ];
 
