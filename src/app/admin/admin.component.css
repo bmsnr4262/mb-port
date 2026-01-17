@@ -623,6 +623,54 @@
   border-color: rgba(245, 158, 11, 0.5);
 }
 
+/* Inline Checkbox in Table */
+.inline-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.inline-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.inline-checkmark {
+  width: 24px;
+  height: 24px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.inline-checkmark::after {
+  content: '';
+  display: none;
+  width: 6px;
+  height: 12px;
+  border: solid #000;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+.inline-checkbox input:checked ~ .inline-checkmark {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-color: #22c55e;
+}
+
+.inline-checkbox input:checked ~ .inline-checkmark::after {
+  display: block;
+}
+
+.inline-checkbox:hover .inline-checkmark {
+  transform: scale(1.1);
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;

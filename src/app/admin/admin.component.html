@@ -333,7 +333,18 @@
                     <tr>
                       @for (column of tableColumns(); track column) {
                         <td [title]="row[column]">
-                          {{ formatCellValue(row[column], column) }}
+                          @if (selectedTable() === 'visitor_access_requests' && column === 'status_id') {
+                            <label class="inline-checkbox" [title]="row[column] === 1 ? 'Active - Click to deactivate' : 'Inactive - Click to activate'">
+                              <input 
+                                type="checkbox" 
+                                [checked]="row[column] === 1"
+                                (change)="toggleStatus(row)"
+                              >
+                              <span class="inline-checkmark"></span>
+                            </label>
+                          } @else {
+                            {{ formatCellValue(row[column], column) }}
+                          }
                         </td>
                       }
                       <td class="actions-col">

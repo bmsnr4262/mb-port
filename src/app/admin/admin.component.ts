@@ -464,6 +464,33 @@ Share this OTP with the user if you want to approve their admin access.
     }
   }
 
+  // Toggle status directly from table
+  async toggleStatus(row: any) {
+    const newStatus = row.status_id === 1 ? 2 : 1;
+    
+    try {
+      const response = await fetch(`${this.API_URL}/admin/tables/${this.selectedTable()}/${row.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status_id: newStatus })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update local data immediately for responsiveness
+        row.status_id = newStatus;
+        this.loadStats();
+      } else {
+        console.error('Failed to update status:', result.message);
+        alert('Failed to update status');
+      }
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      alert('Failed to update status');
+    }
+  }
+
   // Open edit modal
   editRecord(row: any) {
     this.editingRecord.set({ ...row });
