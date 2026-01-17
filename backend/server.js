@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const crypto = require('crypto');
-const { Resend } = require('resend');
+// Email sending via EmailJS API (no npm package needed, uses fetch)
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -636,13 +636,10 @@ app.get('/api/contact-messages/stats', async (req, res) => {
 });
 
 // ============================================
-// EMAIL CONFIGURATION (Resend API)
+// EMAIL CONFIGURATION (EmailJS API)
 // ============================================
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Send reply email endpoint
+// Send reply email endpoint using EmailJS
 app.post('/api/send-reply', async (req, res) => {
   try {
     const { to_email, to_name, subject, original_message, reply_message } = req.body;
@@ -654,9 +651,13 @@ app.post('/api/send-reply', async (req, res) => {
       });
     }
 
-    // Check if Resend API key is configured
-    if (!process.env.RESEND_API_KEY) {
-      console.log('⚠️ RESEND_API_KEY not configured - email not sent');
+    // Check if EmailJS credentials are configured
+    const serviceId = process.env.EMAILJS_SERVICE_ID;
+    const templateId = process.env.EMAILJS_TEMPLATE_ID;
+    const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+
+    if (!serviceId || !templateId || !publicKey) {
+      console.log('⚠️ EmailJS not configured - email not sent');
       return res.json({ 
         success: true, 
         message: 'Reply recorded (email sending not configured)',
@@ -664,52 +665,41 @@ app.post('/api/send-reply', async (req, res) => {
       });
     }
 
-    const { data, error } = await resend.emails.send({
-      from: 'Portfolio <onboarding@resend.dev>',
-      to: [to_email],
-      subject: `Re: ${subject || 'Your Message'}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #f59e0b;">Hello ${to_name || 'there'}!</h2>
-          
-          <p>Thank you for reaching out. Here is my response to your message:</p>
-          
-          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="color: #6b7280; font-size: 14px; margin-bottom: 10px;"><strong>Your Original Message:</strong></p>
-            <p style="color: #374151;">"${original_message}"</p>
-          </div>
-          
-          <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-            <p style="color: #92400e; font-size: 14px; margin-bottom: 10px;"><strong>My Reply:</strong></p>
-            <p style="color: #78350f;">${reply_message}</p>
-          </div>
-          
-          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-          
-          <p style="color: #6b7280; font-size: 14px;">
-            Best regards,<br>
-            <strong style="color: #1f2937;">Madhan Sainath Reddy Bommidi</strong><br>
-            Full-Stack Developer<br>
-            <a href="https://bmsnr4262.github.io/mb-port/" style="color: #f59e0b;">Portfolio Website</a>
-          </p>
-        </div>
-      `
+    // Send via EmailJS REST API
+    const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        service_id: serviceId,
+        template_id: templateId,
+        user_id: publicKey,
+        template_params: {
+          to_email: to_email,
+          to_name: to_name || 'there',
+          from_name: 'Madhan Sainath Reddy Bommidi',
+          subject: `Re: ${subject || 'Your Message'}`,
+          original_message: original_message,
+          reply_message: reply_message
+        }
+      })
     });
 
-    if (error) {
-      console.error('❌ Resend error:', error);
-      return res.status(500).json({ 
+    if (emailResponse.ok) {
+      console.log(`📧 Reply sent to: ${to_email}`);
+      res.json({ 
+        success: true, 
+        message: 'Reply sent successfully' 
+      });
+    } else {
+      const errorText = await emailResponse.text();
+      console.error('❌ EmailJS error:', errorText);
+      res.status(500).json({ 
         success: false, 
-        message: 'Failed to send email: ' + error.message 
+        message: 'Failed to send email: ' + errorText 
       });
     }
-    
-    console.log(`📧 Reply sent to: ${to_email} (ID: ${data.id})`);
-
-    res.json({ 
-      success: true, 
-      message: 'Reply sent successfully' 
-    });
 
   } catch (error) {
     console.error('❌ Error sending reply email:', error);
