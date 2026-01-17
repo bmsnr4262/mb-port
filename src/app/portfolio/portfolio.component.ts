@@ -2,6 +2,7 @@ import { Component, signal, HostListener, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../services/supabase.service';
 
 interface Profile {
@@ -81,7 +82,7 @@ interface Stat {
 @Component({
   selector: 'app-portfolio',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './portfolio.component.html',
   styleUrl: './portfolio.component.css'
 })
