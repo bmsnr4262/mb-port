@@ -654,40 +654,18 @@ app.post('/api/send-reply', async (req, res) => {
     const web3formsKey = process.env.WEB3FORMS_KEY || '12694df3-42eb-4a6d-aaa5-1384c8c93dde';
 
     // Send notification to owner via Web3Forms
-    const formData = new URLSearchParams();
-    formData.append('access_key', web3formsKey);
-    formData.append('subject', `📧 Reply Ready: ${subject || 'Contact Message'}`);
-    formData.append('from_name', 'Portfolio Admin');
-    formData.append('message', `
-REPLY READY TO SEND
-==================
-
-Recipient: ${to_name} <${to_email}>
-Subject: Re: ${subject || 'Your Message'}
-
----
-ORIGINAL MESSAGE FROM VISITOR:
-"${original_message}"
-
----
-YOUR REPLY (copy and send from your email):
-${reply_message}
-
----
-ACTION REQUIRED:
-1. Open your email client
-2. Compose new email to: ${to_email}
-3. Subject: Re: ${subject || 'Your Message'}
-4. Paste the reply above
-5. Send!
-    `);
-
     const emailResponse = await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: formData.toString()
+      body: JSON.stringify({
+        access_key: web3formsKey,
+        subject: `Reply Ready: ${subject || 'Contact Message'}`,
+        from_name: 'Portfolio Admin',
+        message: `REPLY READY TO SEND\n\nRecipient: ${to_name} <${to_email}>\nSubject: Re: ${subject || 'Your Message'}\n\n---\nORIGINAL MESSAGE FROM VISITOR:\n"${original_message}"\n\n---\nYOUR REPLY (copy and send from your email):\n${reply_message}\n\n---\nACTION REQUIRED:\n1. Open your email client\n2. Compose new email to: ${to_email}\n3. Subject: Re: ${subject || 'Your Message'}\n4. Paste the reply above\n5. Send!`
+      })
     });
 
     const result = await emailResponse.json();
