@@ -346,6 +346,15 @@
                             👁️
                           </button>
                         }
+                        @if (selectedTable() === 'visitor_access_requests') {
+                          <button 
+                            class="action-btn edit" 
+                            (click)="editRecord(row)"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                        }
                         @if (selectedTable() !== 'admin_users') {
                           <button 
                             class="action-btn delete" 
@@ -465,6 +474,106 @@
                 }
               </button>
             }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Edit Record Modal -->
+  @if (showEditModal() && editingRecord()) {
+    <div class="modal-overlay" (click)="closeEditModal()">
+      <div class="modal-content edit-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>✏️ Edit Access Request</h2>
+          <button class="modal-close" (click)="closeEditModal()">✕</button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- Record Info (readonly) -->
+          <div class="edit-info">
+            <div class="info-row">
+              <span class="info-label">ID:</span>
+              <span class="info-value">{{ editingRecord().id }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Visitor:</span>
+              <span class="info-value">{{ editingRecord().visitor_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value email">{{ editingRecord().visitor_email }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Project:</span>
+              <span class="info-value">{{ editingRecord().project_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Type:</span>
+              <span class="info-value">{{ editingRecord().project_type }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Created:</span>
+              <span class="info-value">{{ editingRecord().local_time || formatDate(editingRecord().created_at) }}</span>
+            </div>
+          </div>
+
+          <!-- Editable Fields -->
+          <div class="edit-form">
+            <h3>🔧 Access Control</h3>
+            
+            @if (editSuccess()) {
+              <div class="edit-message success">
+                ✅ Record updated successfully!
+              </div>
+            }
+            
+            @if (editError()) {
+              <div class="edit-message error">
+                ❌ {{ editError() }}
+              </div>
+            }
+
+            <div class="status-control">
+              <label class="checkbox-container">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="editFormData.status_active"
+                  [disabled]="editSaving()"
+                >
+                <span class="checkmark"></span>
+                <span class="checkbox-label">
+                  @if (editFormData.status_active) {
+                    <span class="status-active">🟢 Active (status_id = 1)</span>
+                    <span class="status-desc">User can access without OTP</span>
+                  } @else {
+                    <span class="status-inactive">🔴 Inactive (status_id = 2)</span>
+                    <span class="status-desc">User needs OTP to access</span>
+                  }
+                </span>
+              </label>
+            </div>
+
+            <div class="edit-actions">
+              <button 
+                class="btn-cancel" 
+                (click)="closeEditModal()"
+                [disabled]="editSaving()"
+              >
+                Cancel
+              </button>
+              <button 
+                class="btn-save" 
+                (click)="saveEditedRecord()"
+                [disabled]="editSaving()"
+              >
+                @if (editSaving()) {
+                  <span class="spinner"></span> Saving...
+                } @else {
+                  💾 Save Changes
+                }
+              </button>
+            </div>
           </div>
         </div>
       </div>
