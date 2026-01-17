@@ -71,13 +71,6 @@ export class AdminComponent implements OnInit {
   replyError = signal('');
   replyDetails = signal<any>(null);
   
-  // Edit modal states
-  showEditModal = signal(false);
-  editingRecord = signal<any>(null);
-  editFormData: any = {};
-  editSaving = signal(false);
-  editError = signal('');
-  editSuccess = signal(false);
   
   // Computed: Get selected table display name
   get selectedTableDisplayName(): string {
@@ -488,66 +481,6 @@ Share this OTP with the user if you want to approve their admin access.
     } catch (err) {
       console.error('Failed to toggle status:', err);
       alert('Failed to update status');
-    }
-  }
-
-  // Open edit modal
-  editRecord(row: any) {
-    this.editingRecord.set({ ...row });
-    this.editFormData = { ...row };
-    // Convert status_id to boolean for checkbox
-    this.editFormData.status_active = this.editFormData.status_id === 1;
-    this.showEditModal.set(true);
-    this.editError.set('');
-    this.editSuccess.set(false);
-  }
-
-  // Close edit modal
-  closeEditModal() {
-    this.showEditModal.set(false);
-    this.editingRecord.set(null);
-    this.editFormData = {};
-    this.editError.set('');
-    this.editSuccess.set(false);
-  }
-
-  // Save edited record
-  async saveEditedRecord() {
-    const record = this.editingRecord();
-    if (!record) return;
-
-    this.editSaving.set(true);
-    this.editError.set('');
-
-    try {
-      // Convert checkbox to status_id
-      const updateData: any = {
-        status_id: this.editFormData.status_active ? 1 : 2
-      };
-
-      const response = await fetch(`${this.API_URL}/admin/tables/${this.selectedTable()}/${record.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        this.editSuccess.set(true);
-        setTimeout(() => {
-          this.closeEditModal();
-          this.refreshTable();
-          this.loadStats();
-        }, 1000);
-      } else {
-        this.editError.set(result.message || 'Failed to update record');
-      }
-    } catch (err) {
-      console.error('Failed to update record:', err);
-      this.editError.set('Failed to update record. Please try again.');
-    } finally {
-      this.editSaving.set(false);
     }
   }
 
