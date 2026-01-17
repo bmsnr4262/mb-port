@@ -324,7 +324,9 @@
                   <tr>
                     <th class="sno-col">S.No</th>
                     @for (column of tableColumns(); track column) {
-                      <th>{{ column }}</th>
+                      @if (column !== 'id') {
+                        <th>{{ column }}</th>
+                      }
                     }
                     <th class="actions-col">Actions</th>
                   </tr>
@@ -334,20 +336,22 @@
                     <tr>
                       <td class="sno-col">{{ i + 1 }}</td>
                       @for (column of tableColumns(); track column) {
-                        <td [title]="row[column]">
-                          @if (selectedTable() === 'visitor_access_requests' && column === 'status_id') {
-                            <label class="inline-checkbox" [title]="row[column] === 1 ? 'Active - Click to deactivate' : 'Inactive - Click to activate'">
-                              <input 
-                                type="checkbox" 
-                                [checked]="row[column] === 1"
-                                (change)="toggleStatus(row)"
-                              >
-                              <span class="inline-checkmark"></span>
-                            </label>
-                          } @else {
-                            {{ formatCellValue(row[column], column) }}
-                          }
-                        </td>
+                        @if (column !== 'id') {
+                          <td [title]="row[column]">
+                            @if (selectedTable() === 'visitor_access_requests' && column === 'status_id') {
+                              <label class="inline-checkbox" [title]="row[column] === 1 ? 'Active - Click to deactivate' : 'Inactive - Click to activate'">
+                                <input 
+                                  type="checkbox" 
+                                  [checked]="row[column] === 1"
+                                  (change)="toggleStatus(row)"
+                                >
+                                <span class="inline-checkmark"></span>
+                              </label>
+                            } @else {
+                              {{ formatCellValue(row[column], column) }}
+                            }
+                          </td>
+                        }
                       }
                       <td class="actions-col">
                         @if (selectedTable() === 'contact_messages') {
