@@ -421,9 +421,11 @@
   margin-left: 280px;
   padding: 2rem;
   transition: margin-left 0.3s ease;
+  min-height: 100vh;
+  overflow-x: auto;
 }
 
-.sidebar.collapsed + .main-content {
+.sidebar.collapsed ~ .main-content {
   margin-left: 70px;
 }
 
@@ -483,10 +485,37 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
 }
 
 .table-wrapper {
   overflow-x: auto;
+  overflow-y: visible;
+  min-width: 100%;
+}
+
+/* Custom scrollbar */
+.table-container::-webkit-scrollbar,
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track,
+.table-wrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.table-container::-webkit-scrollbar-thumb,
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.5);
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover,
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.7);
 }
 
 .data-table {
