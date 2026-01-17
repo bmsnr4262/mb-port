@@ -945,14 +945,7 @@
 
 .edit-form {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 1.5rem;
-}
-
-.edit-form h3 {
-  font-size: 1rem;
-  color: #fff;
-  margin-bottom: 1rem;
-  font-weight: 600;
+  padding-top: 1.25rem;
 }
 
 .edit-message {
