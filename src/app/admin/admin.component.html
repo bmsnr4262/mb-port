@@ -299,6 +299,9 @@
             </span>
           </div>
           <div class="header-actions">
+            <button class="btn-excel" (click)="exportToExcel()" [disabled]="tableLoading() || tableData().length === 0">
+              📊 Excel
+            </button>
             <button class="btn-refresh" (click)="refreshTable()" [disabled]="tableLoading()">
               🔄 Refresh
             </button>

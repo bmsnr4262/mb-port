@@ -364,6 +364,62 @@ Share this OTP with the user if you want to approve their admin access.
     }
   }
 
+  // Export table data to Excel (CSV format)
+  exportToExcel() {
+    const data = this.tableData();
+    const columns = this.tableColumns().filter(col => col !== 'id');
+    
+    if (data.length === 0) return;
+
+    // Create CSV content
+    let csvContent = '';
+    
+    // Add S.No header + other columns
+    csvContent += 'S.No,' + columns.join(',') + '\n';
+    
+    // Add data rows
+    data.forEach((row, index) => {
+      const rowData = columns.map(col => {
+        let value = row[col];
+        
+        // Handle special formatting
+        if (value === null || value === undefined) {
+          value = '';
+        } else if (typeof value === 'boolean') {
+          value = value ? 'Yes' : 'No';
+        } else if (col === 'status_id') {
+          value = value === 1 ? 'Active' : 'Inactive';
+        } else {
+          value = String(value);
+        }
+        
+        // Escape quotes and wrap in quotes if contains comma
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          value = '"' + value.replace(/"/g, '""') + '"';
+        }
+        
+        return value;
+      });
+      
+      csvContent += (index + 1) + ',' + rowData.join(',') + '\n';
+    });
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const tableName = this.selectedTableDisplayName.replace(/\s+/g, '_');
+    const timestamp = new Date().toISOString().slice(0, 10);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${tableName}_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   // Delete a record
   async deleteRecord(id: number) {
     if (!confirm('Are you sure you want to delete this record?')) {
