@@ -25,6 +25,21 @@ export interface SessionCheckResult {
   visitor_name?: string;
 }
 
+// Contact message data structure
+export interface ContactMessage {
+  id?: number;
+  sender_name: string;
+  sender_email: string;
+  subject?: string;
+  message: string;
+  is_read?: boolean;
+  is_replied?: boolean;
+  created_at?: string;
+  local_time?: string;
+  read_at?: string;
+  replied_at?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -216,6 +231,113 @@ export class SupabaseService {
       return result.success ? result.data : null;
     } catch (error) {
       console.error('Failed to get stats:', error);
+      return null;
+    }
+  }
+
+  // ============================================
+  // CONTACT MESSAGES API METHODS
+  // ============================================
+
+  /**
+   * Save contact form message to database
+   */
+  async saveContactMessage(message: Omit<ContactMessage, 'id' | 'created_at' | 'is_read' | 'is_replied' | 'read_at' | 'replied_at'>): Promise<{ success: boolean; message: string; id?: number }> {
+    if (!this.isBrowser) {
+      return { success: false, message: 'Not in browser' };
+    }
+    
+    try {
+      // Get local timestamp and timezone
+      const now = new Date();
+      const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const localTime = this.formatLocalTime(now, clientTimezone);
+      
+      const response = await fetch(`${this.API_URL}/contact-messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender_name: message.sender_name,
+          sender_email: message.sender_email,
+          subject: message.subject || 'No Subject',
+          message: message.message,
+          local_time: localTime,
+          client_timezone: clientTimezone
+        })
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Failed to save contact message:', error);
+      return { success: false, message: 'Failed to save message' };
+    }
+  }
+
+  /**
+   * Get all contact messages (for admin)
+   */
+  async getAllContactMessages(): Promise<ContactMessage[]> {
+    if (!this.isBrowser) return [];
+    
+    try {
+      const response = await fetch(`${this.API_URL}/contact-messages`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      return result.success ? result.data : [];
+    } catch (error) {
+      console.error('Failed to get contact messages:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get unread messages count
+   */
+  async getUnreadCount(): Promise<number> {
+    if (!this.isBrowser) return 0;
+    
+    try {
+      const response = await fetch(`${this.API_URL}/contact-messages/unread`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      return result.success ? result.unread_count : 0;
+    } catch (error) {
+      console.error('Failed to get unread count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get contact message statistics
+   */
+  async getContactMessageStats(): Promise<any> {
+    if (!this.isBrowser) return null;
+    
+    try {
+      const response = await fetch(`${this.API_URL}/contact-messages/stats`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      return result.success ? result.data : null;
+    } catch (error) {
+      console.error('Failed to get contact message stats:', error);
       return null;
     }
   }

@@ -90,5 +90,61 @@ COMMENT ON COLUMN visitor_access_requests.expires_at IS 'Session expires after t
 -- use pg_cron extension. Otherwise, run the reset query manually.
 
 -- ============================================
+-- TABLE 2: CONTACT MESSAGES
+-- ============================================
+
+-- Create table for storing contact form messages
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id SERIAL PRIMARY KEY,
+    sender_name VARCHAR(255) NOT NULL,
+    sender_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(500),
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    is_replied BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    local_time VARCHAR(50),  -- Human readable local time (e.g., '2026-01-17 02:30:45 IST')
+    client_timezone VARCHAR(100),  -- Client's timezone
+    read_at TIMESTAMP WITH TIME ZONE,
+    replied_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Create indexes for faster queries
+CREATE INDEX IF NOT EXISTS idx_contact_messages_email ON contact_messages(sender_email);
+CREATE INDEX IF NOT EXISTS idx_contact_messages_created ON contact_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contact_messages_is_read ON contact_messages(is_read);
+
+-- Add comments for documentation
+COMMENT ON TABLE contact_messages IS 'Stores contact form submissions from portfolio visitors';
+COMMENT ON COLUMN contact_messages.is_read IS 'TRUE if the message has been read by admin';
+COMMENT ON COLUMN contact_messages.is_replied IS 'TRUE if a reply has been sent';
+
+-- ============================================
+-- USEFUL QUERIES FOR CONTACT MESSAGES
+-- ============================================
+
+-- View all unread messages
+-- SELECT * FROM contact_messages WHERE is_read = FALSE ORDER BY created_at DESC;
+
+-- Mark a message as read
+-- UPDATE contact_messages SET is_read = TRUE, read_at = NOW() WHERE id = 1;
+
+-- Mark a message as replied
+-- UPDATE contact_messages SET is_replied = TRUE, replied_at = NOW() WHERE id = 1;
+
+-- View messages from a specific sender
+-- SELECT * FROM contact_messages WHERE sender_email = 'user@example.com';
+
+-- Delete old messages (older than 90 days)
+-- DELETE FROM contact_messages WHERE created_at < NOW() - INTERVAL '90 days';
+
+-- Get message statistics
+-- SELECT 
+--     COUNT(*) as total_messages,
+--     COUNT(CASE WHEN is_read = FALSE THEN 1 END) as unread_messages,
+--     COUNT(CASE WHEN is_replied = TRUE THEN 1 END) as replied_messages
+-- FROM contact_messages;
+
+-- ============================================
 -- SUCCESS!
 -- ============================================

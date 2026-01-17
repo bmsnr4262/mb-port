@@ -17,7 +17,7 @@ app.use(cors({
     /\.railway\.app$/,  // Allow all Railway domains
     /\.up\.railway\.app$/
   ],
-  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
@@ -388,6 +388,251 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
+// ============================================
+// CONTACT MESSAGES API ENDPOINTS
+// ============================================
+
+// Save a new contact message
+app.post('/api/contact-messages', async (req, res) => {
+  try {
+    const {
+      sender_name,
+      sender_email,
+      subject,
+      message,
+      local_time,
+      client_timezone
+    } = req.body;
+
+    // Validate required fields
+    if (!sender_name || !sender_email || !message) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields (name, email, message)' 
+      });
+    }
+
+    const query = `
+      INSERT INTO contact_messages 
+        (sender_name, sender_email, subject, message, local_time, client_timezone, created_at)
+      VALUES 
+        ($1, $2, $3, $4, $5, $6, NOW())
+      RETURNING id
+    `;
+
+    const result = await pool.query(query, [
+      sender_name,
+      sender_email,
+      subject || 'No Subject',
+      message,
+      local_time || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST',
+      client_timezone || 'Asia/Kolkata'
+    ]);
+
+    console.log(`📧 New contact message from: ${sender_name} (${sender_email}) at ${local_time}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Message saved successfully',
+      id: result.rows[0].id 
+    });
+
+  } catch (error) {
+    console.error('❌ Error saving contact message:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to save message' 
+    });
+  }
+});
+
+// Get all contact messages (for admin)
+app.get('/api/contact-messages', async (req, res) => {
+  try {
+    const query = `
+      SELECT id, sender_name, sender_email, subject, message,
+             is_read, is_replied, created_at, local_time, read_at, replied_at
+      FROM contact_messages 
+      ORDER BY created_at DESC 
+      LIMIT 100
+    `;
+
+    const result = await pool.query(query);
+
+    res.json({ 
+      success: true, 
+      data: result.rows 
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching contact messages:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch messages' 
+    });
+  }
+});
+
+// Get unread messages count
+app.get('/api/contact-messages/unread', async (req, res) => {
+  try {
+    const query = `
+      SELECT COUNT(*) as unread_count
+      FROM contact_messages 
+      WHERE is_read = FALSE
+    `;
+
+    const result = await pool.query(query);
+
+    res.json({ 
+      success: true, 
+      unread_count: parseInt(result.rows[0].unread_count) 
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching unread count:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch unread count' 
+    });
+  }
+});
+
+// Mark message as read
+app.patch('/api/contact-messages/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `
+      UPDATE contact_messages 
+      SET is_read = TRUE, read_at = NOW()
+      WHERE id = $1
+      RETURNING id, sender_name, sender_email
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rowCount > 0) {
+      console.log(`✅ Message ${id} marked as read`);
+      res.json({ 
+        success: true, 
+        message: 'Message marked as read' 
+      });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        message: 'Message not found' 
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error marking message as read:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update message' 
+    });
+  }
+});
+
+// Mark message as replied
+app.patch('/api/contact-messages/:id/replied', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `
+      UPDATE contact_messages 
+      SET is_replied = TRUE, replied_at = NOW()
+      WHERE id = $1
+      RETURNING id, sender_name, sender_email
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rowCount > 0) {
+      console.log(`✅ Message ${id} marked as replied`);
+      res.json({ 
+        success: true, 
+        message: 'Message marked as replied' 
+      });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        message: 'Message not found' 
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error marking message as replied:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update message' 
+    });
+  }
+});
+
+// Delete a contact message
+app.delete('/api/contact-messages/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `
+      DELETE FROM contact_messages 
+      WHERE id = $1
+      RETURNING id
+    `;
+
+    const result = await pool.query(query, [id]);
+
+    if (result.rowCount > 0) {
+      console.log(`🗑️ Message ${id} deleted`);
+      res.json({ 
+        success: true, 
+        message: 'Message deleted' 
+      });
+    } else {
+      res.status(404).json({ 
+        success: false, 
+        message: 'Message not found' 
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error deleting message:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to delete message' 
+    });
+  }
+});
+
+// Get contact message statistics
+app.get('/api/contact-messages/stats', async (req, res) => {
+  try {
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total_messages,
+        COUNT(CASE WHEN is_read = FALSE THEN 1 END) as unread_messages,
+        COUNT(CASE WHEN is_read = TRUE THEN 1 END) as read_messages,
+        COUNT(CASE WHEN is_replied = TRUE THEN 1 END) as replied_messages
+      FROM contact_messages
+    `;
+
+    const result = await pool.query(statsQuery);
+
+    res.json({ 
+      success: true, 
+      data: result.rows[0] 
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching message stats:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch statistics' 
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`
@@ -404,10 +649,24 @@ STATUS CODES:
   status_id = 1 → ACTIVE (can access without OTP)
   status_id = 2 → INACTIVE (needs OTP)
 
-ADMIN ENDPOINTS:
-  GET  /api/access-requests     → View all requests
-  GET  /api/stats               → Get statistics
-  POST /api/access-requests/reset-all → Reset all sessions
-  PATCH /api/access-requests/revoke   → Revoke user access
+OTP ACCESS ENDPOINTS:
+  POST  /api/check-session           → Check existing session
+  POST  /api/access-requests         → Save access request
+  PATCH /api/access-requests/verify  → Verify OTP & activate
+  GET   /api/access-requests         → View all requests (admin)
+  PATCH /api/access-requests/revoke  → Revoke user access
+  POST  /api/access-requests/reset-all → Reset all sessions
+
+CONTACT MESSAGES ENDPOINTS:
+  POST   /api/contact-messages          → Save new message
+  GET    /api/contact-messages          → View all messages (admin)
+  GET    /api/contact-messages/unread   → Get unread count
+  GET    /api/contact-messages/stats    → Get message statistics
+  PATCH  /api/contact-messages/:id/read → Mark as read
+  PATCH  /api/contact-messages/:id/replied → Mark as replied
+  DELETE /api/contact-messages/:id      → Delete message
+
+STATISTICS:
+  GET /api/stats → Get OTP statistics
   `);
 });

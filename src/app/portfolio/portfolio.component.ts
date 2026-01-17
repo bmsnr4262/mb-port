@@ -2,6 +2,7 @@ import { Component, signal, HostListener, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { SupabaseService } from '../services/supabase.service';
 
 interface Profile {
   name: string;
@@ -212,7 +213,16 @@ export class PortfolioComponent {
   // Social links with icons
   socials: Social[];
 
-  constructor(private sanitizer: DomSanitizer, private router: Router) {
+  // Form submission state
+  formLoading = signal(false);
+  formSuccess = signal(false);
+  formError = signal('');
+
+  constructor(
+    private sanitizer: DomSanitizer, 
+    private router: Router,
+    private supabaseService: SupabaseService
+  ) {
     this.skillCategories = [
       {
         title: 'Frontend',
@@ -283,12 +293,53 @@ export class PortfolioComponent {
     this.mobileMenuOpen.set(false);
   }
 
-  handleSubmit(event: Event) {
+  async handleSubmit(event: Event) {
     event.preventDefault();
-    // Handle form submission - you can integrate with your preferred email service
-    // Examples: EmailJS, Formspree, Netlify Forms, or your own backend
-    alert('Thank you for your message! I will get back to you soon.');
-    (event.target as HTMLFormElement).reset();
+    
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const subject = formData.get('subject') as string;
+    const message = formData.get('message') as string;
+    
+    // Validate required fields
+    if (!name || !email || !message) {
+      this.formError.set('Please fill in all required fields');
+      return;
+    }
+    
+    this.formLoading.set(true);
+    this.formError.set('');
+    this.formSuccess.set(false);
+    
+    try {
+      // Save to database
+      const result = await this.supabaseService.saveContactMessage({
+        sender_name: name,
+        sender_email: email,
+        subject: subject || 'No Subject',
+        message: message
+      });
+      
+      if (result.success) {
+        this.formSuccess.set(true);
+        form.reset();
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          this.formSuccess.set(false);
+        }, 5000);
+      } else {
+        this.formError.set(result.message || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      this.formError.set('An error occurred. Please try again later.');
+    } finally {
+      this.formLoading.set(false);
+    }
   }
 
   // Navigate to OTP authentication page before accessing project

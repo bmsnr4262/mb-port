@@ -420,6 +420,45 @@ CREATE TABLE visitor_access_requests (
 
 ---
 
+### 6.4 Table: contact_messages
+
+**SQL Creation Script:**
+```sql
+CREATE TABLE contact_messages (
+    id SERIAL PRIMARY KEY,
+    sender_name VARCHAR(255) NOT NULL,
+    sender_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(500),
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    is_replied BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    local_time VARCHAR(50),
+    client_timezone VARCHAR(100),
+    read_at TIMESTAMP WITH TIME ZONE,
+    replied_at TIMESTAMP WITH TIME ZONE
+);
+```
+
+### 6.5 Contact Messages Column Definitions
+
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| id | SERIAL | Auto-increment | Primary key |
+| sender_name | VARCHAR(255) | Required | Sender's name |
+| sender_email | VARCHAR(255) | Required | Sender's email |
+| subject | VARCHAR(500) | NULL | Message subject |
+| message | TEXT | Required | Message content |
+| is_read | BOOLEAN | FALSE | Whether message was read |
+| is_replied | BOOLEAN | FALSE | Whether reply was sent |
+| created_at | TIMESTAMP | NOW() | Message creation time |
+| local_time | VARCHAR(50) | NULL | Human-readable local time |
+| client_timezone | VARCHAR(100) | NULL | Client's timezone |
+| read_at | TIMESTAMP | NULL | When message was read |
+| replied_at | TIMESTAMP | NULL | When reply was sent |
+
+---
+
 ## 7. OTP Authentication Flow
 
 ### 7.1 Flow Diagram
@@ -772,6 +811,123 @@ postgresql://username:password@host:port/database
 
 ---
 
+## 10.10 Contact Messages API
+
+### Save Contact Message
+
+**Endpoint:** `POST /api/contact-messages`  
+**Description:** Save new contact form submission  
+**Request Body:**
+```json
+{
+  "sender_name": "John Doe",
+  "sender_email": "john@example.com",
+  "subject": "Project Inquiry",
+  "message": "I'd like to discuss a potential project...",
+  "local_time": "2026-01-17 02:30:45 IST",
+  "client_timezone": "Asia/Kolkata"
+}
+```
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Message saved successfully",
+  "id": 1
+}
+```
+
+### Get All Contact Messages (Admin)
+
+**Endpoint:** `GET /api/contact-messages`  
+**Description:** Retrieve all contact messages (limited to 100)  
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "sender_name": "John Doe",
+      "sender_email": "john@example.com",
+      "subject": "Project Inquiry",
+      "message": "I'd like to discuss...",
+      "is_read": false,
+      "is_replied": false,
+      "created_at": "2026-01-17T02:30:45.000Z",
+      "local_time": "2026-01-17 02:30:45 IST"
+    }
+  ]
+}
+```
+
+### Get Unread Count
+
+**Endpoint:** `GET /api/contact-messages/unread`  
+**Description:** Get count of unread messages  
+**Response:**
+```json
+{
+  "success": true,
+  "unread_count": 5
+}
+```
+
+### Mark Message as Read
+
+**Endpoint:** `PATCH /api/contact-messages/:id/read`  
+**Description:** Mark a specific message as read  
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Message marked as read"
+}
+```
+
+### Mark Message as Replied
+
+**Endpoint:** `PATCH /api/contact-messages/:id/replied`  
+**Description:** Mark a specific message as replied  
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Message marked as replied"
+}
+```
+
+### Delete Message
+
+**Endpoint:** `DELETE /api/contact-messages/:id`  
+**Description:** Delete a specific message  
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Message deleted"
+}
+```
+
+### Get Contact Message Statistics
+
+**Endpoint:** `GET /api/contact-messages/stats`  
+**Description:** Get message statistics  
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total_messages": 10,
+    "unread_messages": 3,
+    "read_messages": 7,
+    "replied_messages": 5
+  }
+}
+```
+
+---
+
 ## 11. Admin Operations
 
 ### 11.1 View All Visitors (pgAdmin)
@@ -831,6 +987,62 @@ FROM visitor_access_requests;
 ```sql
 DELETE FROM visitor_access_requests 
 WHERE created_at < NOW() - INTERVAL '30 days';
+```
+
+---
+
+## 11.7 Contact Messages Admin Operations (pgAdmin)
+
+### View All Messages
+
+```sql
+SELECT id, sender_name, sender_email, subject, 
+       CASE WHEN is_read THEN 'READ' ELSE 'UNREAD' END as status,
+       local_time, created_at
+FROM contact_messages 
+ORDER BY created_at DESC;
+```
+
+### View Unread Messages Only
+
+```sql
+SELECT * FROM contact_messages 
+WHERE is_read = FALSE 
+ORDER BY created_at DESC;
+```
+
+### Mark Message as Read
+
+```sql
+UPDATE contact_messages 
+SET is_read = TRUE, read_at = NOW() 
+WHERE id = 1;
+```
+
+### Mark Message as Replied
+
+```sql
+UPDATE contact_messages 
+SET is_replied = TRUE, replied_at = NOW() 
+WHERE id = 1;
+```
+
+### Get Message Statistics
+
+```sql
+SELECT 
+    COUNT(*) as total_messages,
+    COUNT(CASE WHEN is_read = FALSE THEN 1 END) as unread_messages,
+    COUNT(CASE WHEN is_read = TRUE THEN 1 END) as read_messages,
+    COUNT(CASE WHEN is_replied = TRUE THEN 1 END) as replied_messages
+FROM contact_messages;
+```
+
+### Delete Old Messages (older than 90 days)
+
+```sql
+DELETE FROM contact_messages 
+WHERE created_at < NOW() - INTERVAL '90 days';
 ```
 
 ---
