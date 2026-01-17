@@ -548,8 +548,15 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.sno-col {
+  width: 60px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
 .actions-col {
-  width: 80px;
+  width: 100px;
   text-align: center;
 }
 

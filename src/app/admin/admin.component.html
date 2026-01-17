@@ -322,6 +322,7 @@
               <table class="data-table">
                 <thead>
                   <tr>
+                    <th class="sno-col">S.No</th>
                     @for (column of tableColumns(); track column) {
                       <th>{{ column }}</th>
                     }
@@ -329,8 +330,9 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (row of tableData(); track row.id) {
+                  @for (row of tableData(); track row.id; let i = $index) {
                     <tr>
+                      <td class="sno-col">{{ i + 1 }}</td>
                       @for (column of tableColumns(); track column) {
                         <td [title]="row[column]">
                           @if (selectedTable() === 'visitor_access_requests' && column === 'status_id') {
