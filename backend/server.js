@@ -874,9 +874,9 @@ app.get('/api/admin/tables/:tableName', async (req, res) => {
     // For admin_users, hide password_hash and otp_code
     let query;
     if (tableName === 'admin_users') {
-      query = `SELECT id, username, email, is_approved, created_at, last_login_at, login_count FROM ${tableName} ORDER BY created_at DESC LIMIT 100`;
+      query = `SELECT id, username, email, is_approved, created_at, last_login_at, login_count FROM ${tableName} ORDER BY id ASC LIMIT 100`;
     } else {
-      query = `SELECT * FROM ${tableName} ORDER BY created_at DESC LIMIT 100`;
+      query = `SELECT * FROM ${tableName} ORDER BY id ASC LIMIT 100`;
     }
 
     const result = await pool.query(query);
