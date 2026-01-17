@@ -636,13 +636,13 @@ app.get('/api/contact-messages/stats', async (req, res) => {
 });
 
 // ============================================
-// EMAIL CONFIGURATION (Web3Forms - sends to owner)
+// REPLY ENDPOINT (saves reply for manual sending)
 // ============================================
 
-// Send reply notification to owner (owner then replies manually)
+// Save reply - admin can then copy and send manually
 app.post('/api/send-reply', async (req, res) => {
   try {
-    const { to_email, to_name, subject, original_message, reply_message } = req.body;
+    const { to_email, to_name, subject, original_message, reply_message, message_id } = req.body;
 
     if (!to_email || !reply_message) {
       return res.status(400).json({ 
@@ -651,72 +651,26 @@ app.post('/api/send-reply', async (req, res) => {
       });
     }
 
-    const web3formsKey = process.env.WEB3FORMS_KEY || '12694df3-42eb-4a6d-aaa5-1384c8c93dde';
+    // Just log the reply - admin will send manually from their email
+    console.log(`📧 Reply saved for: ${to_name} <${to_email}>`);
+    console.log(`   Subject: Re: ${subject}`);
+    console.log(`   Reply: ${reply_message.substring(0, 50)}...`);
 
-    // Send notification to owner via Web3Forms
-    const emailResponse = await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        access_key: web3formsKey,
-        subject: `Reply Ready: ${subject || 'Contact Message'}`,
-        from_name: 'Portfolio Admin',
-        message: `REPLY READY TO SEND
-
-Recipient: ${to_name} <${to_email}>
-Subject: Re: ${subject || 'Your Message'}
-
-ORIGINAL MESSAGE FROM VISITOR:
-${original_message}
-
-YOUR REPLY (copy and send from your email):
-${reply_message}
-
-ACTION REQUIRED:
-1. Open your email client
-2. Compose new email to: ${to_email}
-3. Paste the reply above
-4. Send!`
-      })
+    res.json({ 
+      success: true, 
+      message: 'Reply saved! Copy the details below to send from your email.',
+      replyDetails: {
+        to: `${to_name} <${to_email}>`,
+        subject: `Re: ${subject || 'Your Message'}`,
+        body: reply_message
+      }
     });
 
-    // Try to parse as JSON, but handle HTML responses
-    const responseText = await emailResponse.text();
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (e) {
-      console.log('Web3Forms response:', responseText.substring(0, 200));
-      // If Web3Forms returns HTML, it usually means success
-      if (emailResponse.ok || responseText.includes('success')) {
-        result = { success: true };
-      } else {
-        result = { success: false, message: 'Email service returned unexpected response' };
-      }
-    }
-
-    if (result.success) {
-      console.log(`📧 Reply notification sent to owner for: ${to_email}`);
-      res.json({ 
-        success: true, 
-        message: 'Reply saved! Check your email for instructions to send.' 
-      });
-    } else {
-      console.error('❌ Web3Forms error:', result);
-      res.status(500).json({ 
-        success: false, 
-        message: result.message || 'Failed to send notification' 
-      });
-    }
-
   } catch (error) {
-    console.error('❌ Error sending reply:', error);
+    console.error('❌ Error saving reply:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to process reply: ' + error.message 
+      message: 'Failed to save reply: ' + error.message 
     });
   }
 });

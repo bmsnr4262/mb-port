@@ -69,6 +69,7 @@ export class AdminComponent implements OnInit {
   replySending = signal(false);
   replySuccess = signal(false);
   replyError = signal('');
+  replyDetails = signal<any>(null);
   
   // Computed: Get selected table display name
   get selectedTableDisplayName(): string {
@@ -489,16 +490,15 @@ Share this OTP with the user if you want to approve their admin access.
         });
 
         this.replySuccess.set(true);
-        this.replyText = '';
+        this.replyDetails.set(result.replyDetails || {
+          to: `${message.sender_name} <${message.sender_email}>`,
+          subject: `Re: ${message.subject || 'Your Message'}`,
+          body: this.replyText
+        });
         this.refreshTable();
         this.loadStats();
-
-        // Close modal after 2 seconds
-        setTimeout(() => {
-          this.closeMessageModal();
-        }, 2000);
       } else {
-        this.replyError.set(result.message || 'Failed to send reply. Please try again.');
+        this.replyError.set(result.message || 'Failed to save reply. Please try again.');
       }
     } catch (err) {
       console.error('Failed to send reply:', err);

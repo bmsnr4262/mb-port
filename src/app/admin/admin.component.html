@@ -415,9 +415,26 @@
           <div class="reply-section">
             <h3>📝 Send Reply</h3>
             
-            @if (replySuccess()) {
-              <div class="reply-message success">
-                ✅ Reply saved! Check your email (bmsnr4262&#64;gmail.com) for instructions to send.
+            @if (replySuccess() && replyDetails()) {
+              <div class="reply-success-box">
+                <div class="reply-message success">
+                  ✅ Reply saved! Copy the details below and send from your email.
+                </div>
+                <div class="copy-section">
+                  <div class="copy-row">
+                    <span class="copy-label">To:</span>
+                    <span class="copy-value">{{ replyDetails().to }}</span>
+                  </div>
+                  <div class="copy-row">
+                    <span class="copy-label">Subject:</span>
+                    <span class="copy-value">{{ replyDetails().subject }}</span>
+                  </div>
+                  <div class="copy-row">
+                    <span class="copy-label">Message:</span>
+                  </div>
+                  <div class="copy-body">{{ replyDetails().body }}</div>
+                </div>
+                <button class="btn-close-modal" (click)="closeMessageModal()">Done</button>
               </div>
             }
             
