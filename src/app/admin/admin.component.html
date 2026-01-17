@@ -241,14 +241,14 @@
         <!-- Stats Cards -->
         <div class="stats-section" [class.hidden]="sidebarCollapsed()">
           @if (stats()) {
-            <div class="stat-card">
+            <div class="stat-card clickable" (click)="selectTable('visitor_access_requests')">
               <span class="stat-icon">🔐</span>
               <div class="stat-info">
                 <span class="stat-value">{{ stats().accessRequests.total }}</span>
                 <span class="stat-label">Access Requests</span>
               </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" (click)="selectTable('contact_messages')">
               <span class="stat-icon">📧</span>
               <div class="stat-info">
                 <span class="stat-value">{{ stats().contactMessages.unread }}</span>
