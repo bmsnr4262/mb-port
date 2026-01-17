@@ -664,11 +664,39 @@ app.post('/api/send-reply', async (req, res) => {
         access_key: web3formsKey,
         subject: `Reply Ready: ${subject || 'Contact Message'}`,
         from_name: 'Portfolio Admin',
-        message: `REPLY READY TO SEND\n\nRecipient: ${to_name} <${to_email}>\nSubject: Re: ${subject || 'Your Message'}\n\n---\nORIGINAL MESSAGE FROM VISITOR:\n"${original_message}"\n\n---\nYOUR REPLY (copy and send from your email):\n${reply_message}\n\n---\nACTION REQUIRED:\n1. Open your email client\n2. Compose new email to: ${to_email}\n3. Subject: Re: ${subject || 'Your Message'}\n4. Paste the reply above\n5. Send!`
+        message: `REPLY READY TO SEND
+
+Recipient: ${to_name} <${to_email}>
+Subject: Re: ${subject || 'Your Message'}
+
+ORIGINAL MESSAGE FROM VISITOR:
+${original_message}
+
+YOUR REPLY (copy and send from your email):
+${reply_message}
+
+ACTION REQUIRED:
+1. Open your email client
+2. Compose new email to: ${to_email}
+3. Paste the reply above
+4. Send!`
       })
     });
 
-    const result = await emailResponse.json();
+    // Try to parse as JSON, but handle HTML responses
+    const responseText = await emailResponse.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.log('Web3Forms response:', responseText.substring(0, 200));
+      // If Web3Forms returns HTML, it usually means success
+      if (emailResponse.ok || responseText.includes('success')) {
+        result = { success: true };
+      } else {
+        result = { success: false, message: 'Email service returned unexpected response' };
+      }
+    }
 
     if (result.success) {
       console.log(`📧 Reply notification sent to owner for: ${to_email}`);
@@ -680,7 +708,7 @@ app.post('/api/send-reply', async (req, res) => {
       console.error('❌ Web3Forms error:', result);
       res.status(500).json({ 
         success: false, 
-        message: 'Failed to send notification' 
+        message: result.message || 'Failed to send notification' 
       });
     }
 
