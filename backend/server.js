@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -636,17 +636,11 @@ app.get('/api/contact-messages/stats', async (req, res) => {
 });
 
 // ============================================
-// EMAIL CONFIGURATION (Gmail SMTP)
+// EMAIL CONFIGURATION (Resend API)
 // ============================================
 
-// Create email transporter
-const emailTransporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'bmsnr4262@gmail.com',
-    pass: process.env.EMAIL_APP_PASSWORD // Gmail App Password (not regular password)
-  }
-});
+// Initialize Resend client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Send reply email endpoint
 app.post('/api/send-reply', async (req, res) => {
@@ -660,10 +654,9 @@ app.post('/api/send-reply', async (req, res) => {
       });
     }
 
-    // Check if email credentials are configured
-    if (!process.env.EMAIL_APP_PASSWORD) {
-      console.log('⚠️ EMAIL_APP_PASSWORD not configured - email not sent');
-      // Return success anyway for demo purposes, but log the issue
+    // Check if Resend API key is configured
+    if (!process.env.RESEND_API_KEY) {
+      console.log('⚠️ RESEND_API_KEY not configured - email not sent');
       return res.json({ 
         success: true, 
         message: 'Reply recorded (email sending not configured)',
@@ -671,9 +664,9 @@ app.post('/api/send-reply', async (req, res) => {
       });
     }
 
-    const mailOptions = {
-      from: `"Madhan Sainath Reddy" <${process.env.EMAIL_USER || 'bmsnr4262@gmail.com'}>`,
-      to: to_email,
+    const { data, error } = await resend.emails.send({
+      from: 'Portfolio <onboarding@resend.dev>',
+      to: [to_email],
       subject: `Re: ${subject || 'Your Message'}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -701,11 +694,17 @@ app.post('/api/send-reply', async (req, res) => {
           </p>
         </div>
       `
-    };
+    });
 
-    await emailTransporter.sendMail(mailOptions);
+    if (error) {
+      console.error('❌ Resend error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send email: ' + error.message 
+      });
+    }
     
-    console.log(`📧 Reply sent to: ${to_email}`);
+    console.log(`📧 Reply sent to: ${to_email} (ID: ${data.id})`);
 
     res.json({ 
       success: true, 
