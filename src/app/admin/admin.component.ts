@@ -467,34 +467,17 @@ Share this OTP with the user if you want to approve their admin access.
     this.replyError.set('');
 
     try {
-      // Send email via Web3Forms
-      const formData = new FormData();
-      formData.append('access_key', this.web3formsKey);
-      formData.append('to', message.sender_email);
-      formData.append('from_name', 'Madhan Sainath Reddy Bommidi');
-      formData.append('subject', `Re: ${message.subject || 'Your Message'}`);
-      formData.append('message', `
-Hello ${message.sender_name},
-
-Thank you for reaching out! Here is my response to your message:
-
----
-Your Original Message:
-"${message.message}"
----
-
-My Reply:
-${this.replyText}
-
----
-Best regards,
-Madhan Sainath Reddy Bommidi
-Portfolio: https://bmsnr4262.github.io/mb-port/
-      `);
-
-      const response = await fetch('https://api.web3forms.com/submit', {
+      // Send email via backend API
+      const response = await fetch(`${this.API_URL}/send-reply`, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_email: message.sender_email,
+          to_name: message.sender_name,
+          subject: message.subject || 'Your Message',
+          original_message: message.message,
+          reply_message: this.replyText
+        })
       });
 
       const result = await response.json();
@@ -515,7 +498,7 @@ Portfolio: https://bmsnr4262.github.io/mb-port/
           this.closeMessageModal();
         }, 2000);
       } else {
-        this.replyError.set('Failed to send reply. Please try again.');
+        this.replyError.set(result.message || 'Failed to send reply. Please try again.');
       }
     } catch (err) {
       console.error('Failed to send reply:', err);

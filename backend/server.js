@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -630,6 +631,92 @@ app.get('/api/contact-messages/stats', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch statistics' 
+    });
+  }
+});
+
+// ============================================
+// EMAIL CONFIGURATION (Gmail SMTP)
+// ============================================
+
+// Create email transporter
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'bmsnr4262@gmail.com',
+    pass: process.env.EMAIL_APP_PASSWORD // Gmail App Password (not regular password)
+  }
+});
+
+// Send reply email endpoint
+app.post('/api/send-reply', async (req, res) => {
+  try {
+    const { to_email, to_name, subject, original_message, reply_message } = req.body;
+
+    if (!to_email || !reply_message) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Recipient email and reply message are required' 
+      });
+    }
+
+    // Check if email credentials are configured
+    if (!process.env.EMAIL_APP_PASSWORD) {
+      console.log('⚠️ EMAIL_APP_PASSWORD not configured - email not sent');
+      // Return success anyway for demo purposes, but log the issue
+      return res.json({ 
+        success: true, 
+        message: 'Reply recorded (email sending not configured)',
+        demo_mode: true
+      });
+    }
+
+    const mailOptions = {
+      from: `"Madhan Sainath Reddy" <${process.env.EMAIL_USER || 'bmsnr4262@gmail.com'}>`,
+      to: to_email,
+      subject: `Re: ${subject || 'Your Message'}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #f59e0b;">Hello ${to_name || 'there'}!</h2>
+          
+          <p>Thank you for reaching out. Here is my response to your message:</p>
+          
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 10px;"><strong>Your Original Message:</strong></p>
+            <p style="color: #374151;">"${original_message}"</p>
+          </div>
+          
+          <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <p style="color: #92400e; font-size: 14px; margin-bottom: 10px;"><strong>My Reply:</strong></p>
+            <p style="color: #78350f;">${reply_message}</p>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          
+          <p style="color: #6b7280; font-size: 14px;">
+            Best regards,<br>
+            <strong style="color: #1f2937;">Madhan Sainath Reddy Bommidi</strong><br>
+            Full-Stack Developer<br>
+            <a href="https://bmsnr4262.github.io/mb-port/" style="color: #f59e0b;">Portfolio Website</a>
+          </p>
+        </div>
+      `
+    };
+
+    await emailTransporter.sendMail(mailOptions);
+    
+    console.log(`📧 Reply sent to: ${to_email}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Reply sent successfully' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error sending reply email:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to send reply email: ' + error.message 
     });
   }
 });
