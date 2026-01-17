@@ -62,6 +62,14 @@ export class AdminComponent implements OnInit {
   // Sidebar collapsed state
   sidebarCollapsed = signal(false);
   
+  // Modal states
+  showMessageModal = signal(false);
+  selectedMessage = signal<any>(null);
+  replyText = '';
+  replySending = signal(false);
+  replySuccess = signal(false);
+  replyError = signal('');
+  
   // Computed: Get selected table display name
   get selectedTableDisplayName(): string {
     const table = this.tables().find(t => t.name === this.selectedTable());
@@ -409,5 +417,111 @@ Share this OTP with the user if you want to approve their admin access.
       return value.substring(0, 50) + '...';
     }
     return String(value);
+  }
+
+  // Open message modal
+  viewMessage(row: any) {
+    this.selectedMessage.set(row);
+    this.showMessageModal.set(true);
+    this.replyText = '';
+    this.replySuccess.set(false);
+    this.replyError.set('');
+    
+    // Mark as read if not already
+    if (!row.is_read) {
+      this.markMessageAsRead(row.id);
+    }
+  }
+
+  // Close message modal
+  closeMessageModal() {
+    this.showMessageModal.set(false);
+    this.selectedMessage.set(null);
+    this.replyText = '';
+    this.replySuccess.set(false);
+    this.replyError.set('');
+  }
+
+  // Mark message as read
+  async markMessageAsRead(id: number) {
+    try {
+      await fetch(`${this.API_URL}/contact-messages/${id}/read`, {
+        method: 'PATCH'
+      });
+      this.refreshTable();
+      this.loadStats();
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
+    }
+  }
+
+  // Send reply to sender
+  async sendReply() {
+    const message = this.selectedMessage();
+    if (!message || !this.replyText.trim()) {
+      this.replyError.set('Please enter a reply message');
+      return;
+    }
+
+    this.replySending.set(true);
+    this.replyError.set('');
+
+    try {
+      // Send email via Web3Forms
+      const formData = new FormData();
+      formData.append('access_key', this.web3formsKey);
+      formData.append('to', message.sender_email);
+      formData.append('from_name', 'Madhan Sainath Reddy Bommidi');
+      formData.append('subject', `Re: ${message.subject || 'Your Message'}`);
+      formData.append('message', `
+Hello ${message.sender_name},
+
+Thank you for reaching out! Here is my response to your message:
+
+---
+Your Original Message:
+"${message.message}"
+---
+
+My Reply:
+${this.replyText}
+
+---
+Best regards,
+Madhan Sainath Reddy Bommidi
+Portfolio: https://bmsnr4262.github.io/mb-port/
+      `);
+
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Mark as replied in database
+        await fetch(`${this.API_URL}/contact-messages/${message.id}/replied`, {
+          method: 'PATCH'
+        });
+
+        this.replySuccess.set(true);
+        this.replyText = '';
+        this.refreshTable();
+        this.loadStats();
+
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          this.closeMessageModal();
+        }, 2000);
+      } else {
+        this.replyError.set('Failed to send reply. Please try again.');
+      }
+    } catch (err) {
+      console.error('Failed to send reply:', err);
+      this.replyError.set('Failed to send reply. Please try again.');
+    } finally {
+      this.replySending.set(false);
+    }
   }
 }

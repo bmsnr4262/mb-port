@@ -337,6 +337,15 @@
                         </td>
                       }
                       <td class="actions-col">
+                        @if (selectedTable() === 'contact_messages') {
+                          <button 
+                            class="action-btn view" 
+                            (click)="viewMessage(row)"
+                            title="View & Reply"
+                          >
+                            👁️
+                          </button>
+                        }
                         @if (selectedTable() !== 'admin_users') {
                           <button 
                             class="action-btn delete" 
@@ -355,6 +364,93 @@
           }
         </div>
       </main>
+    </div>
+  }
+
+  <!-- Message View & Reply Modal -->
+  @if (showMessageModal() && selectedMessage()) {
+    <div class="modal-overlay" (click)="closeMessageModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>📧 Message Details</h2>
+          <button class="modal-close" (click)="closeMessageModal()">✕</button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- Sender Info -->
+          <div class="message-info">
+            <div class="info-row">
+              <span class="info-label">From:</span>
+              <span class="info-value">{{ selectedMessage().sender_name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value email">{{ selectedMessage().sender_email }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Subject:</span>
+              <span class="info-value">{{ selectedMessage().subject || 'No Subject' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Date:</span>
+              <span class="info-value">{{ selectedMessage().local_time || formatDate(selectedMessage().created_at) }}</span>
+            </div>
+            <div class="info-row status-row">
+              <span class="status-badge" [class.read]="selectedMessage().is_read">
+                {{ selectedMessage().is_read ? '✅ Read' : '📩 Unread' }}
+              </span>
+              <span class="status-badge" [class.replied]="selectedMessage().is_replied">
+                {{ selectedMessage().is_replied ? '✅ Replied' : '⏳ Not Replied' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Message Content -->
+          <div class="message-content">
+            <h3>Message:</h3>
+            <div class="message-text">{{ selectedMessage().message }}</div>
+          </div>
+
+          <!-- Reply Section -->
+          <div class="reply-section">
+            <h3>📝 Send Reply</h3>
+            
+            @if (replySuccess()) {
+              <div class="reply-message success">
+                ✅ Reply sent successfully to {{ selectedMessage().sender_email }}!
+              </div>
+            }
+            
+            @if (replyError()) {
+              <div class="reply-message error">
+                ❌ {{ replyError() }}
+              </div>
+            }
+
+            @if (!replySuccess()) {
+              <textarea 
+                class="reply-textarea"
+                [(ngModel)]="replyText"
+                placeholder="Type your reply here..."
+                rows="5"
+                [disabled]="replySending()"
+              ></textarea>
+              
+              <button 
+                class="btn-send-reply" 
+                (click)="sendReply()"
+                [disabled]="replySending() || !replyText.trim()"
+              >
+                @if (replySending()) {
+                  <span class="spinner"></span> Sending...
+                } @else {
+                  📤 Send Reply to {{ selectedMessage().sender_email }}
+                }
+              </button>
+            }
+          </div>
+        </div>
+      </div>
     </div>
   }
 </div>
