@@ -636,10 +636,10 @@ app.get('/api/contact-messages/stats', async (req, res) => {
 });
 
 // ============================================
-// EMAIL CONFIGURATION (EmailJS API)
+// EMAIL CONFIGURATION (Web3Forms - sends to owner)
 // ============================================
 
-// Send reply email endpoint using EmailJS
+// Send reply notification to owner (owner then replies manually)
 app.post('/api/send-reply', async (req, res) => {
   try {
     const { to_email, to_name, subject, original_message, reply_message } = req.body;
@@ -651,61 +651,66 @@ app.post('/api/send-reply', async (req, res) => {
       });
     }
 
-    // Check if EmailJS credentials are configured
-    const serviceId = process.env.EMAILJS_SERVICE_ID;
-    const templateId = process.env.EMAILJS_TEMPLATE_ID;
-    const publicKey = process.env.EMAILJS_PUBLIC_KEY;
+    const web3formsKey = process.env.WEB3FORMS_KEY || '12694df3-42eb-4a6d-aaa5-1384c8c93dde';
 
-    if (!serviceId || !templateId || !publicKey) {
-      console.log('⚠️ EmailJS not configured - email not sent');
-      return res.json({ 
-        success: true, 
-        message: 'Reply recorded (email sending not configured)',
-        demo_mode: true
-      });
-    }
+    // Send notification to owner via Web3Forms
+    const formData = new URLSearchParams();
+    formData.append('access_key', web3formsKey);
+    formData.append('subject', `📧 Reply Ready: ${subject || 'Contact Message'}`);
+    formData.append('from_name', 'Portfolio Admin');
+    formData.append('message', `
+REPLY READY TO SEND
+==================
 
-    // Send via EmailJS REST API
-    const emailResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+Recipient: ${to_name} <${to_email}>
+Subject: Re: ${subject || 'Your Message'}
+
+---
+ORIGINAL MESSAGE FROM VISITOR:
+"${original_message}"
+
+---
+YOUR REPLY (copy and send from your email):
+${reply_message}
+
+---
+ACTION REQUIRED:
+1. Open your email client
+2. Compose new email to: ${to_email}
+3. Subject: Re: ${subject || 'Your Message'}
+4. Paste the reply above
+5. Send!
+    `);
+
+    const emailResponse = await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: JSON.stringify({
-        service_id: serviceId,
-        template_id: templateId,
-        user_id: publicKey,
-        template_params: {
-          to_email: to_email,
-          to_name: to_name || 'there',
-          from_name: 'Madhan Sainath Reddy Bommidi',
-          subject: `Re: ${subject || 'Your Message'}`,
-          original_message: original_message,
-          reply_message: reply_message
-        }
-      })
+      body: formData.toString()
     });
 
-    if (emailResponse.ok) {
-      console.log(`📧 Reply sent to: ${to_email}`);
+    const result = await emailResponse.json();
+
+    if (result.success) {
+      console.log(`📧 Reply notification sent to owner for: ${to_email}`);
       res.json({ 
         success: true, 
-        message: 'Reply sent successfully' 
+        message: 'Reply saved! Check your email for instructions to send.' 
       });
     } else {
-      const errorText = await emailResponse.text();
-      console.error('❌ EmailJS error:', errorText);
+      console.error('❌ Web3Forms error:', result);
       res.status(500).json({ 
         success: false, 
-        message: 'Failed to send email: ' + errorText 
+        message: 'Failed to send notification' 
       });
     }
 
   } catch (error) {
-    console.error('❌ Error sending reply email:', error);
+    console.error('❌ Error sending reply:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to send reply email: ' + error.message 
+      message: 'Failed to process reply: ' + error.message 
     });
   }
 });
