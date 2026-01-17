@@ -146,5 +146,31 @@ COMMENT ON COLUMN contact_messages.is_replied IS 'TRUE if a reply has been sent'
 -- FROM contact_messages;
 
 -- ============================================
+-- TABLE 3: ADMIN USERS
+-- ============================================
+
+-- Create table for admin user accounts
+CREATE TABLE IF NOT EXISTS admin_users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    is_approved BOOLEAN DEFAULT FALSE,
+    otp_code VARCHAR(6),
+    otp_expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP WITH TIME ZONE,
+    login_count INTEGER DEFAULT 0
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username);
+CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
+
+-- Add comments
+COMMENT ON TABLE admin_users IS 'Stores admin user accounts for dashboard access';
+COMMENT ON COLUMN admin_users.is_approved IS 'TRUE if owner has approved via OTP';
+
+-- ============================================
 -- SUCCESS!
 -- ============================================

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -629,6 +630,412 @@ app.get('/api/contact-messages/stats', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch statistics' 
+    });
+  }
+});
+
+// ============================================
+// ADMIN AUTHENTICATION API ENDPOINTS
+// ============================================
+
+// Helper: Hash password using SHA-256
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// Helper: Generate 6-digit OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Admin Signup - Request access (sends OTP to owner)
+app.post('/api/admin/signup', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username, email, and password are required' 
+      });
+    }
+
+    // Check if username or email already exists
+    const existingUser = await pool.query(
+      'SELECT id FROM admin_users WHERE username = $1 OR email = $2',
+      [username, email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username or email already exists' 
+      });
+    }
+
+    // Generate OTP and hash password
+    const otp = generateOTP();
+    const passwordHash = hashPassword(password);
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Insert new admin user (not approved yet)
+    const result = await pool.query(`
+      INSERT INTO admin_users (username, email, password_hash, otp_code, otp_expires_at, is_approved)
+      VALUES ($1, $2, $3, $4, $5, false)
+      RETURNING id
+    `, [username, email, passwordHash, otp, otpExpiresAt]);
+
+    console.log(`🔐 Admin signup request: ${username} (${email}) - OTP: ${otp}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Signup request submitted. OTP sent to owner for approval.',
+      otp: otp, // In production, this would be sent via email to owner
+      userId: result.rows[0].id
+    });
+
+  } catch (error) {
+    console.error('❌ Error in admin signup:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to process signup request' 
+    });
+  }
+});
+
+// Admin Verify OTP - Complete signup
+app.post('/api/admin/verify-signup', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and OTP are required' 
+      });
+    }
+
+    // Find user with matching email and OTP
+    const result = await pool.query(`
+      SELECT id, username, otp_expires_at FROM admin_users 
+      WHERE email = $1 AND otp_code = $2 AND is_approved = false
+    `, [email, otp]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid OTP or email' 
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Check if OTP expired
+    if (new Date() > new Date(user.otp_expires_at)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'OTP has expired. Please signup again.' 
+      });
+    }
+
+    // Approve the user
+    await pool.query(`
+      UPDATE admin_users 
+      SET is_approved = true, otp_code = NULL, otp_expires_at = NULL
+      WHERE id = $1
+    `, [user.id]);
+
+    console.log(`✅ Admin approved: ${user.username}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Account verified successfully. You can now login.' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error verifying admin signup:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to verify OTP' 
+    });
+  }
+});
+
+// Admin Login
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username and password are required' 
+      });
+    }
+
+    const passwordHash = hashPassword(password);
+
+    // Find user with matching credentials
+    const result = await pool.query(`
+      SELECT id, username, email, is_approved FROM admin_users 
+      WHERE username = $1 AND password_hash = $2
+    `, [username, passwordHash]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Invalid username or password' 
+      });
+    }
+
+    const user = result.rows[0];
+
+    if (!user.is_approved) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Account not yet approved. Please verify OTP first.' 
+      });
+    }
+
+    // Update last login
+    await pool.query(`
+      UPDATE admin_users 
+      SET last_login_at = NOW(), login_count = login_count + 1
+      WHERE id = $1
+    `, [user.id]);
+
+    // Generate session token
+    const token = crypto.randomBytes(32).toString('hex');
+
+    console.log(`✅ Admin login: ${user.username}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Login successful',
+      token: token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error in admin login:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to login' 
+    });
+  }
+});
+
+// ============================================
+// ADMIN DASHBOARD API ENDPOINTS
+// ============================================
+
+// Get list of available tables
+app.get('/api/admin/tables', async (req, res) => {
+  try {
+    const tables = [
+      { name: 'visitor_access_requests', displayName: 'Visitor Access Requests', icon: '🔐' },
+      { name: 'contact_messages', displayName: 'Contact Messages', icon: '📧' },
+      { name: 'admin_users', displayName: 'Admin Users', icon: '👤' }
+    ];
+
+    res.json({ 
+      success: true, 
+      data: tables 
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching tables:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch tables' 
+    });
+  }
+});
+
+// Get table data
+app.get('/api/admin/tables/:tableName', async (req, res) => {
+  try {
+    const { tableName } = req.params;
+    
+    // Whitelist of allowed tables for security
+    const allowedTables = ['visitor_access_requests', 'contact_messages', 'admin_users'];
+    
+    if (!allowedTables.includes(tableName)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid table name' 
+      });
+    }
+
+    // For admin_users, hide password_hash and otp_code
+    let query;
+    if (tableName === 'admin_users') {
+      query = `SELECT id, username, email, is_approved, created_at, last_login_at, login_count FROM ${tableName} ORDER BY created_at DESC LIMIT 100`;
+    } else {
+      query = `SELECT * FROM ${tableName} ORDER BY created_at DESC LIMIT 100`;
+    }
+
+    const result = await pool.query(query);
+
+    // Get column names
+    const columns = result.fields.map(field => field.name);
+
+    res.json({ 
+      success: true, 
+      tableName: tableName,
+      columns: columns,
+      data: result.rows,
+      rowCount: result.rowCount
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching table data:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch table data' 
+    });
+  }
+});
+
+// Update record (for marking messages as read, etc.)
+app.patch('/api/admin/tables/:tableName/:id', async (req, res) => {
+  try {
+    const { tableName, id } = req.params;
+    const updates = req.body;
+
+    const allowedTables = ['visitor_access_requests', 'contact_messages'];
+    
+    if (!allowedTables.includes(tableName)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot update this table' 
+      });
+    }
+
+    // Build update query dynamically
+    const setClauses = [];
+    const values = [];
+    let paramIndex = 1;
+
+    for (const [key, value] of Object.entries(updates)) {
+      // Prevent updating sensitive fields
+      if (['id', 'created_at', 'password_hash'].includes(key)) continue;
+      setClauses.push(`${key} = $${paramIndex}`);
+      values.push(value);
+      paramIndex++;
+    }
+
+    if (setClauses.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid fields to update' 
+      });
+    }
+
+    values.push(id);
+    const query = `UPDATE ${tableName} SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING id`;
+    
+    const result = await pool.query(query, values);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Record not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Record updated successfully' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating record:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update record' 
+    });
+  }
+});
+
+// Delete record
+app.delete('/api/admin/tables/:tableName/:id', async (req, res) => {
+  try {
+    const { tableName, id } = req.params;
+
+    const allowedTables = ['visitor_access_requests', 'contact_messages'];
+    
+    if (!allowedTables.includes(tableName)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete from this table' 
+      });
+    }
+
+    const result = await pool.query(`DELETE FROM ${tableName} WHERE id = $1 RETURNING id`, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Record not found' 
+      });
+    }
+
+    console.log(`🗑️ Deleted record ${id} from ${tableName}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Record deleted successfully' 
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting record:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to delete record' 
+    });
+  }
+});
+
+// Get dashboard stats
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+  try {
+    const accessStats = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status_id = 1 THEN 1 END) as active_sessions
+      FROM visitor_access_requests
+    `);
+
+    const messageStats = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN is_read = false THEN 1 END) as unread
+      FROM contact_messages
+    `);
+
+    const adminStats = await pool.query(`
+      SELECT COUNT(*) as total FROM admin_users WHERE is_approved = true
+    `);
+
+    res.json({ 
+      success: true, 
+      data: {
+        accessRequests: accessStats.rows[0],
+        contactMessages: messageStats.rows[0],
+        adminUsers: adminStats.rows[0]
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching dashboard stats:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch dashboard stats' 
     });
   }
 });

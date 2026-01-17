@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import('./otp-auth/otp-auth.component').then(m => m.OtpAuthComponent)
   },
   {
+    path: 'admin',
+    loadComponent: () => import('./admin/admin.component').then(m => m.AdminComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

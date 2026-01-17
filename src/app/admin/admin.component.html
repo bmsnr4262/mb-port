@@ -1,0 +1,360 @@
+<div class="admin-container">
+  <!-- Auth View (Login/Signup/Verify) -->
+  @if (!isLoggedIn()) {
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-logo">
+            <span class="logo-bracket">&lt;</span>
+            <span class="logo-text">Admin</span>
+            <span class="logo-bracket">/&gt;</span>
+          </div>
+          <p class="auth-subtitle">Portfolio Dashboard Access</p>
+        </div>
+
+        <!-- Login Form -->
+        @if (currentView() === 'login') {
+          <form class="auth-form" (ngSubmit)="login()">
+            <h2 class="form-title">Welcome Back</h2>
+            
+            @if (error()) {
+              <div class="message error">
+                <span>❌</span> {{ error() }}
+              </div>
+            }
+            
+            @if (success()) {
+              <div class="message success">
+                <span>✅</span> {{ success() }}
+              </div>
+            }
+
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input 
+                type="text" 
+                id="username" 
+                [(ngModel)]="loginUsername"
+                name="username"
+                placeholder="Enter your username"
+                [disabled]="loading()"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input 
+                type="password" 
+                id="password" 
+                [(ngModel)]="loginPassword"
+                name="password"
+                placeholder="Enter your password"
+                [disabled]="loading()"
+                required
+              >
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner"></span> Logging in...
+              } @else {
+                🔐 Login
+              }
+            </button>
+
+            <p class="auth-switch">
+              Don't have an account? 
+              <button type="button" class="link-btn" (click)="switchToSignup()">Sign Up</button>
+            </p>
+          </form>
+        }
+
+        <!-- Signup Form -->
+        @if (currentView() === 'signup') {
+          <form class="auth-form" (ngSubmit)="signup()">
+            <h2 class="form-title">Request Admin Access</h2>
+            
+            @if (error()) {
+              <div class="message error">
+                <span>❌</span> {{ error() }}
+              </div>
+            }
+
+            <div class="form-group">
+              <label for="signupUsername">Username</label>
+              <input 
+                type="text" 
+                id="signupUsername" 
+                [(ngModel)]="signupUsername"
+                name="signupUsername"
+                placeholder="Choose a username"
+                [disabled]="loading()"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="signupEmail">Email</label>
+              <input 
+                type="email" 
+                id="signupEmail" 
+                [(ngModel)]="signupEmail"
+                name="signupEmail"
+                placeholder="Enter your email"
+                [disabled]="loading()"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="signupPassword">Password</label>
+              <input 
+                type="password" 
+                id="signupPassword" 
+                [(ngModel)]="signupPassword"
+                name="signupPassword"
+                placeholder="Choose a password (min 6 characters)"
+                [disabled]="loading()"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Confirm Password</label>
+              <input 
+                type="password" 
+                id="confirmPassword" 
+                [(ngModel)]="signupConfirmPassword"
+                name="confirmPassword"
+                placeholder="Confirm your password"
+                [disabled]="loading()"
+                required
+              >
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner"></span> Submitting...
+              } @else {
+                📝 Request Access
+              }
+            </button>
+
+            <p class="auth-switch">
+              Already have an account? 
+              <button type="button" class="link-btn" (click)="switchToLogin()">Login</button>
+            </p>
+
+            <p class="auth-note">
+              ⚠️ An OTP will be sent to the website owner for approval.
+            </p>
+          </form>
+        }
+
+        <!-- OTP Verification Form -->
+        @if (currentView() === 'verify') {
+          <form class="auth-form" (ngSubmit)="verifyOTP()">
+            <h2 class="form-title">Verify OTP</h2>
+            
+            @if (error()) {
+              <div class="message error">
+                <span>❌</span> {{ error() }}
+              </div>
+            }
+            
+            @if (success()) {
+              <div class="message success">
+                <span>✅</span> {{ success() }}
+              </div>
+            }
+
+            <p class="verify-info">
+              An OTP has been sent to the website owner. 
+              Enter the OTP once you receive it from the owner.
+            </p>
+
+            <div class="form-group">
+              <label for="otp">Enter OTP</label>
+              <input 
+                type="text" 
+                id="otp" 
+                [(ngModel)]="verifyOtp"
+                name="otp"
+                placeholder="Enter 6-digit OTP"
+                maxlength="6"
+                [disabled]="loading()"
+                class="otp-input"
+                required
+              >
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              @if (loading()) {
+                <span class="spinner"></span> Verifying...
+              } @else {
+                ✓ Verify OTP
+              }
+            </button>
+
+            <p class="auth-switch">
+              <button type="button" class="link-btn" (click)="switchToLogin()">← Back to Login</button>
+            </p>
+          </form>
+        }
+
+        <!-- Back to Website Link -->
+        <div class="back-to-site">
+          <button type="button" class="link-btn" (click)="goToWebsite()">
+            ← Back to Portfolio Website
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Dashboard View -->
+  @if (isLoggedIn()) {
+    <div class="dashboard">
+      <!-- Sidebar -->
+      <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+        <div class="sidebar-header">
+          <div class="sidebar-logo" [class.hidden]="sidebarCollapsed()">
+            <span class="logo-bracket">&lt;</span>
+            <span class="logo-text">Admin</span>
+            <span class="logo-bracket">/&gt;</span>
+          </div>
+          <button class="toggle-btn" (click)="toggleSidebar()">
+            {{ sidebarCollapsed() ? '→' : '←' }}
+          </button>
+        </div>
+
+        <!-- User Info -->
+        <div class="user-info" [class.hidden]="sidebarCollapsed()">
+          <div class="user-avatar">{{ currentUser()?.username?.charAt(0)?.toUpperCase() }}</div>
+          <div class="user-details">
+            <span class="user-name">{{ currentUser()?.username }}</span>
+            <span class="user-email">{{ currentUser()?.email }}</span>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-section" [class.hidden]="sidebarCollapsed()">
+          @if (stats()) {
+            <div class="stat-card">
+              <span class="stat-icon">🔐</span>
+              <div class="stat-info">
+                <span class="stat-value">{{ stats().accessRequests.total }}</span>
+                <span class="stat-label">Access Requests</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">📧</span>
+              <div class="stat-info">
+                <span class="stat-value">{{ stats().contactMessages.unread }}</span>
+                <span class="stat-label">Unread Messages</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Table Navigation -->
+        <nav class="sidebar-nav">
+          <h3 class="nav-title" [class.hidden]="sidebarCollapsed()">📊 Database Tables</h3>
+          @for (table of tables(); track table.name) {
+            <button 
+              class="nav-item"
+              [class.active]="selectedTable() === table.name"
+              (click)="selectTable(table.name)"
+              [title]="table.displayName"
+            >
+              <span class="nav-icon">{{ table.icon }}</span>
+              <span class="nav-text" [class.hidden]="sidebarCollapsed()">{{ table.displayName }}</span>
+            </button>
+          }
+        </nav>
+
+        <!-- Footer Actions -->
+        <div class="sidebar-footer">
+          <button class="nav-item website-link" (click)="goToWebsite()" title="Back to Website">
+            <span class="nav-icon">🌐</span>
+            <span class="nav-text" [class.hidden]="sidebarCollapsed()">Back to Website</span>
+          </button>
+          <button class="nav-item logout-btn" (click)="logout()" title="Logout">
+            <span class="nav-icon">🚪</span>
+            <span class="nav-text" [class.hidden]="sidebarCollapsed()">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <header class="content-header">
+          <div class="header-left">
+            <h1 class="page-title">
+              {{ selectedTableDisplayName }}
+            </h1>
+            <span class="record-count">
+              {{ tableData().length }} records
+            </span>
+          </div>
+          <div class="header-actions">
+            <button class="btn-refresh" (click)="refreshTable()" [disabled]="tableLoading()">
+              🔄 Refresh
+            </button>
+          </div>
+        </header>
+
+        <!-- Table Content -->
+        <div class="table-container">
+          @if (tableLoading()) {
+            <div class="loading-state">
+              <span class="spinner large"></span>
+              <p>Loading data...</p>
+            </div>
+          } @else if (tableData().length === 0) {
+            <div class="empty-state">
+              <span class="empty-icon">📭</span>
+              <p>No records found</p>
+            </div>
+          } @else {
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    @for (column of tableColumns(); track column) {
+                      <th>{{ column }}</th>
+                    }
+                    <th class="actions-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of tableData(); track row.id) {
+                    <tr>
+                      @for (column of tableColumns(); track column) {
+                        <td [title]="row[column]">
+                          {{ formatCellValue(row[column], column) }}
+                        </td>
+                      }
+                      <td class="actions-col">
+                        @if (selectedTable() !== 'admin_users') {
+                          <button 
+                            class="action-btn delete" 
+                            (click)="deleteRecord(row.id)"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </main>
+    </div>
+  }
+</div>
